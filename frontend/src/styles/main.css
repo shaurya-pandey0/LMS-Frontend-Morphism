@@ -1,0 +1,19 @@
+/* ============================================================
+   LIFETRACK — Main Stylesheet
+   Import order matters: tokens → reset → typography → layout → components
+   
+   HOW TO USE:
+   Each page should link ONLY this file:
+   <link rel="stylesheet" href="../shared/styles/main.css">
+   ============================================================ */
+
+@import url('./tokens.css');
+@import url('./reset.css');
+@import url('./typography.css');
+@import url('./layout.css');
+@import url('./components.css');
+@import url('./daily-log.css');
+@import url('./expenses.css');
+@import url('./journal.css');
+@import url('./analytics.css');
+@import url('./admin.css');

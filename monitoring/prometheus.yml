@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: "lifetrack-backend"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      # host.docker.internal resolves to your machine from inside the
+      # container, since Spring Boot runs directly on Windows, not in Docker.
+      - targets: ["host.docker.internal:8080"]

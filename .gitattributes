@@ -1,0 +1,19 @@
+# Normalise line endings so scripts stay runnable on every platform.
+* text=auto
+
+# Shell scripts and the Maven wrapper MUST keep LF, otherwise macOS/Linux
+# fail with "bad interpreter: /usr/bin/env bash^M".
+*.sh        text eol=lf
+mvnw        text eol=lf
+
+# Windows scripts MUST keep CRLF.
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+
+# Treat binaries as-is.
+*.png       binary
+*.jpg       binary
+*.svg       text
+*.gguf      binary
+*.tvim      binary
+*.npz       binary

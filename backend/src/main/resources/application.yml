@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: lifestyle-ai-backend
+  datasource:
+    url: jdbc:mysql://localhost:3306/lifestyle_ai?createDatabaseIfNotExist=true
+    username: root
+    password: "1234"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+server:
+  port: 8080
+
+app:
+  jwt:
+    # Base64-encoded 256-bit secret. Override in production via APP_JWT_SECRET.
+    secret: ${APP_JWT_SECRET:bGlmZXRyYWNrLWRldmVsb3BtZW50LXNlY3JldC1rZXktY2hhbmdlLW1lLWluLXByb2R1Y3Rpb24=}
+    # Token validity in milliseconds (default 24h)
+    expiration-ms: ${APP_JWT_EXPIRATION_MS:86400000}
+  cors:
+    # Comma-separated list of allowed frontend origins
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000}
+  insights:
+    # Thresholds for the rule-based insight engine (GET /api/insights)
+    min-sleep-hours: ${APP_INSIGHTS_MIN_SLEEP_HOURS:6.0}
+    good-sleep-hours: ${APP_INSIGHTS_GOOD_SLEEP_HOURS:7.5}
+    weekly-spending-threshold: ${APP_INSIGHTS_WEEKLY_SPENDING_THRESHOLD:1000.0}
+    min-water-intake-ml: ${APP_INSIGHTS_MIN_WATER_INTAKE_ML:2000.0}
+    habit-consistency-threshold: ${APP_INSIGHTS_HABIT_CONSISTENCY_THRESHOLD:0.5}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Exposes /actuator/health, /actuator/metrics, /actuator/prometheus.
+        # Restrict this list (or add auth) before any public deployment.
+        include: health,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  level:
+    org.springframework.security: INFO
+    com.lifetrack: DEBUG
+

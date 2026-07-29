@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="LifeTrack Design System — Component Preview showing all shared UI components">
+  <title>LifeTrack — Component Preview</title>
+  <link rel="stylesheet" href="../frontend/src/styles/main.css">
+  <style>
+    /* Preview-only styles — NOT part of the design system */
+    .preview-section {
+      padding: var(--space-8) 0;
+      border-bottom: 2px solid var(--sand-200);
+    }
+
+    .preview-section:last-child {
+      border-bottom: none;
+    }
+
+    .preview-label {
+      font-family: var(--font-body);
+      font-size: var(--text-xs);
+      font-weight: var(--weight-semibold);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--taupe-400);
+      margin-bottom: var(--space-4);
+    }
+
+    .preview-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-4);
+      margin-bottom: var(--space-4);
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--space-4);
+    }
+
+    .color-swatch {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--sand-200);
+    }
+
+    .color-swatch__block {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      flex-shrink: 0;
+    }
+
+    .color-swatch__name {
+      font-size: var(--text-sm);
+      font-weight: var(--weight-medium);
+    }
+
+    .color-swatch__hex {
+      font-size: var(--text-xs);
+      color: var(--taupe-600);
+      font-family: monospace;
+    }
+
+    .demo-container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: var(--space-6);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="demo-container">
+
+    <!-- ========================================
+         HEADER
+         ======================================== -->
+    <div style="margin-bottom: var(--space-8);">
+      <div class="flex items-center gap-3" style="margin-bottom: var(--space-4);">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16 2C14 8 8 14 4 18C8 17 12 18 14 22C14 18 16 12 22 6C20 8 18 6 16 2Z" fill="#241F1A" />
+        </svg>
+        <span
+          style="font-family: var(--font-display); font-size: var(--text-3xl); font-weight: 700; font-style: italic; color: var(--ink-900);">LifeTrack</span>
+      </div>
+      <p class="text-secondary" style="font-size: var(--text-lg);">
+        Component Preview — Shared Design System
+      </p>
+      <p class="text-muted text-sm" style="margin-top: var(--space-2);">
+        This page demonstrates every shared component. Use these classes in your pages.
+      </p>
+    </div>
+
+
+    <!-- ========================================
+         1. COLOR PALETTE
+         ======================================== -->
+    <section class="preview-section">
+      <div class="preview-label">1. Color Palette</div>
+
+      <p class="text-sm weight-semibold mb-4">Clay / Terracotta (Primary)</p>
+      <div class="preview-row">
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#F7EDE7"></div>
+          <div>
+            <div class="color-swatch__name">clay-50</div>
+            <div class="color-swatch__hex">#F7EDE7</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#EBD3C6"></div>
+          <div>
+            <div class="color-swatch__name">clay-100</div>
+            <div class="color-swatch__hex">#EBD3C6</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#D9A88E"></div>
+          <div>
+            <div class="color-swatch__name">clay-300</div>
+            <div class="color-swatch__hex">#D9A88E</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#B5734F"></div>
+          <div>
+            <div class="color-swatch__name">clay-500</div>
+            <div class="color-swatch__hex">#B5734F</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#A4623F"></div>
+          <div>
+            <div class="color-swatch__name">clay-600</div>
+            <div class="color-swatch__hex">#A4623F</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#8A4F32"></div>
+          <div>
+            <div class="color-swatch__name">clay-700</div>
+            <div class="color-swatch__hex">#8A4F32</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-sm weight-semibold mb-4">Sage Green (Secondary)</p>
+      <div class="preview-row">
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#ECEFE8"></div>
+          <div>
+            <div class="color-swatch__name">sage-50</div>
+            <div class="color-swatch__hex">#ECEFE8</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#D6DECB"></div>
+          <div>
+            <div class="color-swatch__name">sage-100</div>
+            <div class="color-swatch__hex">#D6DECB</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#A9B894"></div>
+          <div>
+            <div class="color-swatch__name">sage-300</div>
+            <div class="color-swatch__hex">#A9B894</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#7E9469"></div>
+          <div>
+            <div class="color-swatch__name">sage-500</div>
+            <div class="color-swatch__hex">#7E9469</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#5E7050"></div>
+          <div>
+            <div class="color-swatch__name">sage-700</div>
+            <div class="color-swatch__hex">#5E7050</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-sm weight-semibold mb-4">Neutrals</p>
+      <div class="preview-row">
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#FFFFFF; border: 1px solid #E6DCD0;"></div>
+          <div>
+            <div class="color-swatch__name">sand-0</div>
+            <div class="color-swatch__hex">#FFFFFF</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#FAF6F1"></div>
+          <div>
+            <div class="color-swatch__name">sand-50</div>
+            <div class="color-swatch__hex">#FAF6F1</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#F2EBE3"></div>
+          <div>
+            <div class="color-swatch__name">sand-100</div>
+            <div class="color-swatch__hex">#F2EBE3</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#E6DCD0"></div>
+          <div>
+            <div class="color-swatch__name">sand-200</div>
+            <div class="color-swatch__hex">#E6DCD0</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#D2C4B4"></div>
+          <div>
+            <div class="color-swatch__name">sand-300</div>
+            <div class="color-swatch__hex">#D2C4B4</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#A89685"></div>
+          <div>
+            <div class="color-swatch__name">taupe-400</div>
+            <div class="color-swatch__hex">#A89685</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#6E6052"></div>
+          <div>
+            <div class="color-swatch__name">taupe-600</div>
+            <div class="color-swatch__hex">#6E6052</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#3D3730"></div>
+          <div>
+            <div class="color-swatch__name">ink-800</div>
+            <div class="color-swatch__hex">#3D3730</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#241F1A"></div>
+          <div>
+            <div class="color-swatch__name">ink-900</div>
+            <div class="color-swatch__hex">#241F1A</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-sm weight-semibold mb-4">Status</p>
+      <div class="preview-row">
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#7E9469"></div>
+          <div>
+            <div class="color-swatch__name">success</div>
+            <div class="color-swatch__hex">#7E9469</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#C9A227"></div>
+          <div>
+            <div class="color-swatch__name">warning</div>
+            <div class="color-swatch__hex">#C9A227</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#B5503F"></div>
+          <div>
+            <div class="color-swatch__name">danger</div>
+            <div class="color-swatch__hex">#B5503F</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-swatch__block" style="background:#6E8CA0"></div>
+          <div>
+            <div class="color-swatch__name">info</div>
+            <div class="color-swatch__hex">#6E8CA0</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================
+         2. TYPOGRAPHY
+         ======================================== -->
+    <section class="preview-section">
+      <div class="preview-label">2. Typography</div>
+
+      <div class="text-display" style="margin-bottom: var(--space-3);">Bring Balance to Your Balance</div>
+      <div class="page-title" style="margin-bottom: var(--space-3);">Page Title (text-3xl)</div>
+      <div class="section-heading" style="margin-bottom: var(--space-3);">Section Heading (text-2xl)</div>
+      <div class="card-heading" style="margin-bottom: var(--space-3);">Card Heading (text-xl)</div>
+      <div class="sub-heading" style="margin-bottom: var(--space-3);">Sub-heading (text-lg)</div>
+      <p style="margin-bottom: var(--space-3);">Body text (text-base) — The quick brown fox jumps over the lazy dog.
+        This is the standard body copy used throughout the application.</p>
+      <p class="text-sm text-secondary" style="margin-bottom: var(--space-3);">Small / helper text (text-sm) — Secondary
+        information and descriptions.</p>
+      <p class="caption text-muted">Caption text (text-xs) — Timestamps, fine print, and metadata.</p>
+    </section>
+
+
+    <!-- ========================================
+         3. BUTTONS
+         ======================================== -->
+    <section class="preview-section">
+      <div class="preview-label">3. Buttons</div>
+
+      <p class="text-sm weight-semibold mb-4">Primary</p>
+      <div class="preview-row">
+        <button class="btn btn--primary">Begin Journey</button>
+        <button class="btn btn--primary btn--sm">Small Button</button>
+        <button class="btn btn--primary btn--lg">Large Button</button>
+        <button class="btn btn--primary" disabled>Disabled</button>
+      </div>
+
+      <p class="text-sm weight-semibold mb-4">Secondary / Outline</p>
+      <div class="preview-row">
+        <button class="btn btn--secondary">New Goal</button>
+        <button class="btn btn--secondary btn--sm">Log Wellness</button>
+      </div>
+
+      <p class="text-sm weight-semibold mb-4">Ghost / Text</p>
+      <div class="preview-row">
+        <button class="btn btn--ghost">Forgot Password?</button>
+        <a href="#" class="btn btn--ghost">Login</a>
+        <a href="#" class="btn btn--ghost">Register</a>
+      </div>
+
+      <p class="text-sm weight-semibold mb-4">Destructive</p>
+      <div class="preview-row">
+        <button class="btn btn--destructive btn--sm">Delete</button>
+      </div>
+
+      <p class="text-sm weight-semibold mb-4">Icon Button</p>
+      <div class="preview-row">
+        <button class="btn btn--icon" aria-label="Edit">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14.5 2.5l3 3L6 17H3v-3L14.5 2.5z" />
+          </svg>
+        </button>
+        <button class="btn btn--icon btn--sm" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M4 4l8 8M12 4l-8 8" />
+          </svg>
+        </button>
+      </div>
+
+      <p class="text-sm weight-semibold mb-4">Full Width</p>
+      <div style="max-width: 400px;">
+        <button class="btn btn--primary btn--full">Register</button>
+      </div>
+    </section>
+
+
+    <!-- ========================================
+         4. CARDS
+         ======================================== -->
+    <section class="preview-section">
+      <div class="preview-label">4. Cards</div>
+
+      <div class="preview-grid">
+        <!-- Standard Card -->
+        <div class="card">
+          <div class="card__header">
+            <h3 class="card__title">Quick Actions</h3>
+          </div>
+          <div class="card__body">
+            <button class="btn btn--secondary btn--full">New Goal</button>
+            <button class="btn btn--secondary btn--full">Log Wellness</button>
+            <button class="btn btn--primary btn--full">Log Wellness</button>
+          </div>
+        </div>
+
+        <!-- Stat Card -->
+        <div class="card card--stat">
+          <div class="card__icon">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <circle cx="20" cy="20" r="16" stroke="#B5734F" stroke-width="3" stroke-dasharray="80 100"
+                stroke-linecap="round" transform="rotate(-90 20 20)" />
+            </svg>
+          </div>
+          <div>
+            <div class="card__stat-value">12,450</div>
+            <div class="card__stat-label">Total Users</div>
+          </div>
+        </div>
+
+        <!-- Meal Card -->
+        <div class="card card--meal">
+          <h4 class="card__title" style="margin-bottom: var(--space-2);">Breakfast</h4>
+          <p class="text-sm">Oatmeal</p>
+          <a href="#" class="link text-sm" style="margin-top: var(--space-2); display:inline-block;">Add meal Item</a>
+        </div>
+      </div>
+
+      <!-- Auth Card preview -->
+      <p class="text-sm weight-semibold mt-6 mb-4">Auth Card</p>
+      <div
+        style="display:flex; justify-content:center; padding: var(--space-6); background: var(--sand-50); border-radius: var(--radius-lg);">
+        <div class="card card--auth">
+          <div class="sidebar__logo" style="margin-bottom: var(--space-6);">
+            <svg class="sidebar__logo-mark" width="28" height="28" viewBox="0 0 32 32" fill="none">
+              <path d="M16 2C14 8 8 14 4 18C8 17 12 18 14 22C14 18 16 12 22 6C20 8 18 6 16 2Z" fill="#241F1A" />
+            </svg>
+            <span class="sidebar__logo-text">LifeTrack</span>
+          </div>
+          <h2 class="card__title">Welcome Back</h2>
+          <p class="card__subtitle">Sign in to continue your journey toward balance</p>
+          <div class="card__body">
+            <div class="form-group">
+              <input type="email" class="form-input form-input--auth" placeholder="Email address">
+            </div>
+            <div class="form-group">
+              <div class="form-input-wrapper">
+                <input type="password" class="form-input form-input--auth" placeholder="Password"
+                  style="padding-right: var(--space-10);">
+                <span class="form-input-wrapper__suffix">Show/e</span>
+              </div>
+            </div>
+            <button class="btn btn--primary btn--full mt-6">Sign In</button>
+          </div>
+          <div class="card__footer">
+            <span class="text-sm">Don't have an account?</span>
+            <a href="#" class="btn btn--ghost text-sm">Register</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================
+         5. FORM CONTROLS
+         ======================================== -->
+    <section class="preview-section">
+      <div class="preview-label">5. Form Controls</div>
+
+      <div style="max-width: 400px;">
+        <div class="form-group">
+          <label class="form-label" for="demo-name">Full Name</label>
+          <input type="text" id="demo-name" class="form-input" placeholder="Enter your name">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="demo-email">Email Address</label>
+          <input type="email" id="demo-email" class="form-input" placeholder="you@example.com">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="demo-error">Error State</label>
+          <input type="text" id="demo-error" class="form-input form-input--error" value="Invalid input">
+          <span class="form-helper form-helper--error">This field is required</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="demo-select">Category Filter</label>
+          <select id="demo-select" class="form-select">
+            <option>Category Filter</option>
+            <option>Food</option>
+            <option>Housing</option>
+            <option>Travel</option>
+            <option>Wellness</option>
+            <option>Misc</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="demo-textarea">Journal Entry</label>
+          <textarea id="demo-textarea" class="form-textarea" placeholder="My Thoughts Today..."></textarea>
+        </div>
+
+        <div class="form-group" style="margin-top: var(--space-6);">
+          <label class="form-checkbox">
+            <input type="checkbox" class="form-checkbox__input">
+            <span>Drink Water Before Coffee</span>
+          </label>
+        </div>
+        <div class="form-group" style="margin-top: var(--space-2);">
+          <label class="form-checkbox">
+            <input type="checkbox" class="form-checkbox__input" checked>
+            <span>Meditation (10 min)</span>
+          </label>
+        </div>
+        <div class="form-group" style="margin-top: var(--space-2);">
+          <label class="form-checkbox">
+            <input type="checkbox" class="form-checkbox__input">
+            <span>Steps Goal Met</span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================
+         6. CHIPS & BADGES
+         ======================================== -->
+    <section class="preview-section">
+      <div class="preview-label">6. Chips & Badges</div>
+
+      <div class="preview-row">
+        <span class="chip chip--sage">Sleep Health</span>
+        <span class="chip chip--sage">Optimal</span>
+        <span class="chip chip--clay">4 Health</span>
+        <span class="chip chip--clay">Body Analytics</span>
+        <span class="chip chip--success">Success</span>
+        <span class="chip chip--warning">Warning</span>
+        <span class="chip chip--danger">Error</span>
+        <span class="chip chip--info">Info</span>
+      </div>
+    </section>
+
+
+    <!-- ========================================
+         7. TABLE
+         ======================================== -->
+    <section class="preview-section">
+      <div class="preview-label">7. Table</div>
+
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Category</th>
+              <th class="table__number">Amount</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Dec 27</td>
+              <td>Food</td>
+              <td class="table__number">$50.00</td>
+              <td>
+                <div class="table__actions">
+                  <button class="btn btn--icon btn--sm" aria-label="Edit">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                      stroke-width="1.5">
+                      <path d="M14.5 2.5l3 3L6 17H3v-3L14.5 2.5z" />
+                    </svg>
+                  </button>
+                  <button class="btn btn--destructive btn--sm">Delete</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>Dec 27</td>
+              <td>Housing</td>
+              <td class="table__number">$3,200.00</td>
+              <td>
+                <div class="table__actions">
+                  <button class="btn btn--icon btn--sm" aria-label="Edit">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                      stroke-width="1.5">
+                      <path d="M14.5 2.5l3 3L6 17H3v-3L14.5 2.5z" />
+                    </svg>
+                  </button>
+                  <button class="btn btn--destructive btn--sm">Delete</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>Nov 27</td>
+              <td>Travel</td>
+              <td class="table__number">$1,000.00</td>
+              <td>
+                <div class="table__actions">
+                  <button class="btn btn--icon btn--sm" aria-label="Edit">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                      stroke-width="1.5">
+                      <path d="M14.5 2.5l3 3L6 17H3v-3L14.5 2.5z" />
+                    </svg>
+                  </button>
+                  <button class="btn btn--destructive btn--sm">Delete</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+
+    <!-- ========================================
+         8. TOASTS
+         ======================================== -->
+    <section class="preview-section">
+      <div class="preview-label">8. Toasts</div>
+
+      <div style="display: flex; flex-direction: column; gap: var(--space-3); max-width: 420px;">
+        <div class="toast toast--success" style="animation:none; position:static; pointer-events:all;">
+          <div class="toast__content">
+            <div class="toast__title">Success</div>
+            <div class="toast__message">Your journal entry has been saved.</div>
+          </div>
+          <div class="toast__close">✕</div>
+        </div>
+
+        <div class="toast toast--error" style="animation:none; position:static; pointer-events:all;">
+          <div class="toast__content">
+            <div class="toast__title">Error</div>
+            <div class="toast__message">Failed to save entry. Please try again.</div>
+          </div>
+          <div class="toast__close">✕</div>
+        </div>
+
+        <div class="toast toast--warning" style="animation:none; position:static; pointer-events:all;">
+          <div class="toast__content">
+            <div class="toast__title">Warning</div>
+            <div class="toast__message">You're approaching your monthly budget limit.</div>
+          </div>
+          <div class="toast__close">✕</div>
+        </div>
+
+        <div class="toast toast--info" style="animation:none; position:static; pointer-events:all;">
+          <div class="toast__content">
+            <div class="toast__title">Info</div>
+            <div class="toast__message">New wellness insights available in your Trends page.</div>
+          </div>
+          <div class="toast__close">✕</div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================
+         9. AVATARS
+         ======================================== -->
+    <section class="preview-section">
+      <div class="preview-label">9. Avatars</div>
+
+      <div class="preview-row">
+        <div class="avatar avatar--sm avatar--fallback">AJ</div>
+        <div class="avatar avatar--md avatar--fallback">AJ</div>
+        <div class="avatar avatar--lg avatar--fallback">AJ</div>
+      </div>
+    </section>
+
+
+    <!-- ========================================
+         10. MODAL (inline demo)
+         ======================================== -->
+    <section class="preview-section">
+      <div class="preview-label">10. Modal</div>
+
+      <button class="btn btn--secondary" id="openModalBtn">Open Modal Demo</button>
+
+      <div class="modal-overlay" id="demoModal">
+        <div class="modal">
+          <div class="modal__close" id="closeModalBtn">✕</div>
+          <h3 class="modal__title">Confirm Deletion</h3>
+          <div class="modal__body">
+            Are you sure you want to delete this expense entry? This action cannot be undone.
+          </div>
+          <div class="modal__actions">
+            <button class="btn btn--secondary btn--sm" id="cancelModalBtn">Cancel</button>
+            <button class="btn btn--destructive btn--sm">Delete</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================
+         11. SIDEBAR + TOPNAV LAYOUT DEMO
+         ======================================== -->
+    <section class="preview-section">
+      <div class="preview-label">11. Sidebar + Top Nav (layout shell)</div>
+      <p class="text-sm text-secondary mb-4">
+        Below is a miniature preview of the sidebar + top nav layout. On actual pages, use the full
+        <code>.app-shell</code> container — see the page templates for copy-paste HTML.
+      </p>
+
+      <div
+        style="border: 1px solid var(--sand-200); border-radius: var(--radius-md); overflow:hidden; height: 400px; position: relative; background: var(--sand-50);">
+        <!-- Mini sidebar -->
+        <div
+          style="position:absolute; top:0; left:0; bottom:0; width:180px; background:var(--sand-0); border-right:1px solid var(--sand-200); display:flex; flex-direction:column; font-size: var(--text-sm);">
+          <div
+            style="height:50px; display:flex; align-items:center; padding: 0 var(--space-3); border-bottom:1px solid var(--sand-200); gap: var(--space-2);">
+            <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+              <path d="M16 2C14 8 8 14 4 18C8 17 12 18 14 22C14 18 16 12 22 6C20 8 18 6 16 2Z" fill="#241F1A" />
+            </svg>
+            <span style="font-family: var(--font-display); font-weight:700; font-style:italic;">LifeTrack</span>
+          </div>
+          <div style="padding: var(--space-3); flex:1; display:flex; flex-direction:column; gap:2px;">
+            <div
+              style="display:flex; align-items:center; gap:var(--space-2); padding: var(--space-2) var(--space-3); border-radius:var(--radius-md); color:var(--ink-800);">
+              <span>⊞</span> Dashboard
+            </div>
+            <div
+              style="display:flex; align-items:center; gap:var(--space-2); padding: var(--space-2) var(--space-3); border-radius:var(--radius-md); background:var(--clay-500); color:var(--sand-0);">
+              <span>📋</span> Daily Log
+            </div>
+            <div
+              style="display:flex; align-items:center; gap:var(--space-2); padding: var(--space-2) var(--space-3); border-radius:var(--radius-md); color:var(--ink-800);">
+              <span>📊</span> Analytics
+            </div>
+            <div
+              style="display:flex; align-items:center; gap:var(--space-2); padding: var(--space-2) var(--space-3); border-radius:var(--radius-md); color:var(--ink-800);">
+              <span>💰</span> Expenses
+            </div>
+            <div
+              style="display:flex; align-items:center; gap:var(--space-2); padding: var(--space-2) var(--space-3); border-radius:var(--radius-md); color:var(--ink-800);">
+              <span>📓</span> Journal
+            </div>
+          </div>
+          <div
+            style="padding: var(--space-3); border-top:1px solid var(--sand-200); display:flex; align-items:center; gap:var(--space-2);">
+            <div class="avatar avatar--sm avatar--fallback" style="font-size:10px;">AJ</div>
+            <span style="font-size:var(--text-sm);">Alex J.</span>
+          </div>
+        </div>
+        <!-- Mini topnav -->
+        <div
+          style="position:absolute; top:0; left:180px; right:0; height:50px; background:var(--sand-0); border-bottom:1px solid var(--sand-200); display:flex; align-items:center; justify-content:space-between; padding:0 var(--space-4); font-size:var(--text-sm);">
+          <div style="display:flex; gap:var(--space-6);">
+            <span
+              style="font-weight:var(--weight-semibold); border-bottom:2px solid var(--clay-500); padding-bottom:2px;">Overview</span>
+            <span style="color:var(--ink-800);">History</span>
+            <span style="color:var(--ink-800);">Profile</span>
+            <span style="color:var(--ink-800);">Insights</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:var(--space-2);">
+            <div class="avatar avatar--sm avatar--fallback" style="font-size:10px;">AJ</div>
+            <span>Alex J. ▾</span>
+          </div>
+        </div>
+        <!-- Mini content -->
+        <div
+          style="position:absolute; top:50px; left:180px; right:0; bottom:0; padding:var(--space-4); display:grid; grid-template-columns: repeat(3, 1fr); gap:var(--space-3);">
+          <div class="card" style="padding:var(--space-3);"><span class="text-sm weight-semibold">Card 1</span></div>
+          <div class="card" style="padding:var(--space-3);"><span class="text-sm weight-semibold">Card 2</span></div>
+          <div class="card" style="padding:var(--space-3);"><span class="text-sm weight-semibold">Card 3</span></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================
+         USAGE INSTRUCTIONS
+         ======================================== -->
+    <section class="preview-section" style="border-bottom:none;">
+      <div class="preview-label">How to use in your pages</div>
+
+      <div class="card"
+        style="background: var(--sand-100); font-family: monospace; font-size: var(--text-sm); white-space: pre; overflow-x: auto; line-height: 1.8; padding: var(--space-6);">
+        &lt;!-- In every page &lt;head&gt;: --&gt;
+        &lt;link rel="stylesheet" href="../shared/styles/main.css"&gt;
+
+        &lt;!-- For auth pages (Login / Register): --&gt;
+        &lt;body&gt;
+        &lt;div class="app-shell--auth"&gt;
+        &lt;div class="botanical-overlay"&gt;&lt;/div&gt;
+        &lt;div class="mesh-overlay"&gt;&lt;/div&gt;
+        &lt;div class="card card--auth"&gt;
+        ...your form...
+        &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;/body&gt;
+
+        &lt;!-- For dashboard / inner pages: --&gt;
+        &lt;body&gt;
+        &lt;div class="app-shell"&gt;
+        &lt;div class="botanical-overlay"&gt;&lt;/div&gt;
+        &lt;aside class="sidebar"&gt;...&lt;/aside&gt;
+        &lt;nav class="topnav"&gt;...&lt;/nav&gt;
+        &lt;main class="app-main"&gt;
+        &lt;div class="app-main__content"&gt;
+        &lt;div class="grid grid--3"&gt;
+        &lt;div class="card"&gt;...&lt;/div&gt;
+        &lt;div class="card"&gt;...&lt;/div&gt;
+        &lt;div class="card"&gt;...&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;/main&gt;
+        &lt;/div&gt;
+        &lt;/body&gt;</div>
+    </section>
+
+  </div><!-- /.demo-container -->
+
+
+  <!-- Modal script -->
+  <script>
+    const openBtn = document.getElementById('openModalBtn');
+    const closeBtn = document.getElementById('closeModalBtn');
+    const cancelBtn = document.getElementById('cancelModalBtn');
+    const modal = document.getElementById('demoModal');
+
+    openBtn.addEventListener('click', () => modal.classList.add('modal-overlay--visible'));
+    closeBtn.addEventListener('click', () => modal.classList.remove('modal-overlay--visible'));
+    cancelBtn.addEventListener('click', () => modal.classList.remove('modal-overlay--visible'));
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('modal-overlay--visible');
+    });
+  </script>
+</body>
+
+</html>

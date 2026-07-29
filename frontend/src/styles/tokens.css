@@ -1,0 +1,166 @@
+/* ============================================================
+   LIFETRACK — Design Tokens (CSS Custom Properties)
+   Source of truth: design-system/tokens.json
+   ============================================================ */
+
+:root {
+  /* ── Color Primitives: Clay / Terracotta (Primary) ── */
+  --clay-50:   #F7EDE7;
+  --clay-100:  #EBD3C6;
+  --clay-300:  #D9A88E;
+  --clay-500:  #B5734F;
+  --clay-600:  #A4623F;
+  --clay-700:  #8A4F32;
+
+  /* ── Color Primitives: Sage Green (Secondary / Positive) ── */
+  --sage-50:   #ECEFE8;
+  --sage-100:  #D6DECB;
+  --sage-300:  #A9B894;
+  --sage-500:  #7E9469;
+  --sage-700:  #5E7050;
+
+  /* ── Color Primitives: Warm Sand / Neutrals ── */
+  --sand-0:    #FFFFFF;
+  --sand-50:   #FAF6F1;
+  --sand-100:  #F2EBE3;
+  --sand-200:  #E6DCD0;
+  --sand-300:  #D2C4B4;
+  --taupe-400: #A89685;
+  --taupe-600: #6E6052;
+  --ink-800:   #3D3730;
+  --ink-900:   #241F1A;
+
+  /* ── Functional / Status Colors ── */
+  --success-500: #7E9469;
+  --warning-500: #C9A227;
+  --danger-500:  #B5503F;
+  --info-500:    #6E8CA0;
+
+  /* ── Semantic: Backgrounds ── */
+  --color-bg-app:        var(--sand-50);
+  --color-bg-card:       var(--sand-0);
+  --color-bg-card-alt:   var(--sand-100);
+  --color-bg-sidebar:    var(--sand-0);
+  --color-bg-input:      var(--sand-0);
+  --color-bg-hover:      var(--clay-50);
+  --color-bg-active-nav: var(--clay-500);
+  --color-bg-chip:       var(--sage-50);
+  --color-bg-chip-alt:   var(--clay-50);
+  --color-bg-filter-bar: var(--clay-500);
+  --color-bg-overlay:    rgba(36, 31, 26, 0.40);
+
+  /* ── Semantic: Text ── */
+  --color-text-heading:   var(--ink-900);
+  --color-text-primary:   var(--ink-800);
+  --color-text-secondary: var(--taupe-600);
+  --color-text-muted:     var(--taupe-400);
+  --color-text-on-accent: var(--sand-0);
+  --color-text-link:      var(--clay-500);
+  --color-text-link-hover:var(--clay-700);
+
+  /* ── Semantic: Borders ── */
+  --color-border-default:     var(--sand-200);
+  --color-border-muted:       var(--sand-300);
+  --color-border-input-focus: var(--clay-500);
+  --color-border-card-left:   var(--clay-300);
+
+  /* ── Semantic: Buttons ── */
+  --color-btn-primary-bg:          var(--clay-500);
+  --color-btn-primary-bg-hover:    var(--clay-600);
+  --color-btn-primary-bg-active:   var(--clay-700);
+  --color-btn-primary-bg-disabled: var(--clay-300);
+  --color-btn-primary-text:        var(--sand-0);
+  --color-btn-destructive-bg:      var(--danger-500);
+  --color-btn-destructive-text:    var(--sand-0);
+
+  /* ── Semantic: Status ── */
+  --color-status-success:    var(--success-500);
+  --color-status-success-bg: var(--sage-50);
+  --color-status-warning:    var(--warning-500);
+  --color-status-warning-bg: #FDF6E3;
+  --color-status-danger:     var(--danger-500);
+  --color-status-danger-bg:  #FBF0EE;
+  --color-status-info:       var(--info-500);
+  --color-status-info-bg:    #EDF3F6;
+
+  /* ── Typography ── */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body:    'Inter', 'Helvetica Neue', Arial, sans-serif;
+
+  --text-xs:      0.75rem;   /* 12px */
+  --text-sm:      0.875rem;  /* 14px */
+  --text-base:    1rem;      /* 16px */
+  --text-lg:      1.125rem;  /* 18px */
+  --text-xl:      1.375rem;  /* 22px */
+  --text-2xl:     1.75rem;   /* 28px */
+  --text-3xl:     2.25rem;   /* 36px */
+  --text-display: 3.5rem;    /* 56px */
+
+  --lh-xs:      1.333;
+  --lh-sm:      1.429;
+  --lh-base:    1.5;
+  --lh-lg:      1.556;
+  --lh-xl:      1.364;
+  --lh-2xl:     1.286;
+  --lh-3xl:     1.222;
+  --lh-display: 1.143;
+
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  /* ── Spacing (4px base) ── */
+  --space-1:  0.25rem;  /*  4px */
+  --space-2:  0.5rem;   /*  8px */
+  --space-3:  0.75rem;  /* 12px */
+  --space-4:  1rem;     /* 16px */
+  --space-5:  1.25rem;  /* 20px */
+  --space-6:  1.5rem;   /* 24px */
+  --space-8:  2rem;     /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+
+  /* ── Border Radius ── */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+  --radius-pill: 999px;
+
+  /* ── Shadows (warm-toned, layered, never pure black) ── */
+  --shadow-none: none;
+  --shadow-xs:   0 1px 2px rgba(61, 55, 48, 0.05),
+                 0 1px 1px rgba(61, 55, 48, 0.03);
+  --shadow-sm:   0 2px 4px rgba(61, 55, 48, 0.05),
+                 0 4px 10px rgba(61, 55, 48, 0.06);
+  --shadow-md:   0 4px 8px rgba(61, 55, 48, 0.06),
+                 0 10px 24px rgba(61, 55, 48, 0.09);
+  --shadow-lg:   0 8px 16px rgba(61, 55, 48, 0.08),
+                 0 20px 44px rgba(61, 55, 48, 0.13);
+  /* Tinted glows for accent elements */
+  --shadow-clay: 0 4px 12px rgba(181, 115, 79, 0.28);
+  --shadow-sage: 0 4px 12px rgba(126, 148, 105, 0.25);
+
+  /* ── Gradients ── */
+  --gradient-clay:  linear-gradient(180deg, var(--clay-500) 0%, var(--clay-600) 100%);
+  --gradient-sage:  linear-gradient(180deg, var(--sage-500) 0%, var(--sage-700) 100%);
+  --gradient-app:   radial-gradient(1100px 500px at 85% -10%, rgba(217, 168, 142, 0.16) 0%, transparent 60%),
+                    radial-gradient(900px 500px at -10% 100%, rgba(169, 184, 148, 0.14) 0%, transparent 55%),
+                    linear-gradient(180deg, var(--sand-50) 0%, #F6F0E8 100%);
+
+  /* ── Z-Index ── */
+  --z-base:     0;
+  --z-dropdown: 1000;
+  --z-sticky:   1100;
+  --z-overlay:  1200;
+  --z-modal:    1300;
+  --z-toast:    1400;
+
+  /* ── Layout ── */
+  --sidebar-width:     220px;
+  --sidebar-collapsed: 56px;
+  --topnav-height:     64px;
+  --content-max-width: 1280px;
+}

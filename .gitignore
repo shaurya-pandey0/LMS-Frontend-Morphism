@@ -1,0 +1,112 @@
+# ===========================================================================
+#  LifeTrack — root .gitignore
+#
+#  Rule of thumb: anything that can be re-downloaded or re-generated from a
+#  manifest (package.json, pom.xml, requirements.txt) is NOT committed.
+#  `start-lifetrack.bat` installs all of it on first run.
+# ===========================================================================
+
+# --- Node / React frontend -------------------------------------------------
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/node_modules/.vite/
+frontend/node_modules/.vite-temp/
+.npm/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.eslintcache
+
+# --- Java / Maven backend --------------------------------------------------
+target/
+backend/target/
+build/
+!**/src/**/target/
+.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+# --- Python / FastAPI AI service ------------------------------------------
+ai-service/.venv/
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Local databases & generated data -------------------------------------
+# Project-local MongoDB instance started by start-lifetrack.bat
+data/
+# Per-user local vector stores (embeddings + TurboVec indexes)
+ai-service/data/
+ai-service/data/users/
+*.tvim
+*.npz
+
+# --- Secrets & environment ------------------------------------------------
+# Never commit real keys. *.env.example files ARE committed as templates,
+# and start-lifetrack.bat creates the real .env from them on first run.
+.env
+.env.local
+.env.*.local
+ai-service/.env
+*.pem
+*.key
+
+# frontend/.env holds only local service URLs (no secrets) and is required
+# for a fresh clone to build, so it is tracked deliberately.
+!frontend/.env
+
+# --- Logs & temp ----------------------------------------------------------
+*.log
+logs/
+# Development-only snapshot of the exact outbound LLM request.
+ai-service/prompt.md
+lint.txt
+*.tmp
+*.bak
+*.orig
+
+# --- IDE / editor ---------------------------------------------------------
+# Eclipse
+.metadata/
+.settings/
+.classpath
+.project
+.factorypath
+.apt_generated/
+# IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+# VS Code (keep shared settings if the team wants them; ignore local noise)
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+# Kiro
+.kiro/
+
+# --- OS -------------------------------------------------------------------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes

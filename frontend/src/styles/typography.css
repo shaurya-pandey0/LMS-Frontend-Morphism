@@ -1,0 +1,151 @@
+/* ============================================================
+   LIFETRACK — Typography
+   Fonts: Playfair Display (headings) + Inter (body/UI)
+   ============================================================ */
+
+/* Fonts are loaded from index.html via <link rel="preconnect"> for
+   faster first paint — no @import here. */
+
+/* ── Heading Classes (Serif / Display) ── */
+
+.text-display {
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  line-height: var(--lh-display);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-heading);
+}
+
+.text-3xl,
+.page-title {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  line-height: var(--lh-3xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-heading);
+}
+
+.text-2xl,
+.section-heading {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  line-height: var(--lh-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-heading);
+}
+
+/* ── Sub-heading Classes (Sans-serif) ── */
+
+.text-xl,
+.card-heading {
+  font-family: var(--font-body);
+  font-size: var(--text-xl);
+  line-height: var(--lh-xl);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-800);
+}
+
+.text-lg,
+.sub-heading {
+  font-family: var(--font-body);
+  font-size: var(--text-lg);
+  line-height: var(--lh-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-800);
+}
+
+/* ── Body / UI Text ── */
+
+.text-base {
+  font-size: var(--text-base);
+  line-height: var(--lh-base);
+}
+
+.text-sm {
+  font-size: var(--text-sm);
+  line-height: var(--lh-sm);
+}
+
+.text-xs,
+.caption {
+  font-size: var(--text-xs);
+  line-height: var(--lh-xs);
+}
+
+/* ── Text Colors ── */
+
+.text-heading   { color: var(--color-text-heading); }
+.text-primary   { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-muted     { color: var(--color-text-muted); }
+.text-link      { color: var(--color-text-link); }
+.text-success   { color: var(--color-status-success); }
+.text-warning   { color: var(--color-status-warning); }
+.text-danger    { color: var(--color-status-danger); }
+.text-info      { color: var(--color-status-info); }
+
+/* ── Font Weights ── */
+
+.weight-regular  { font-weight: var(--weight-regular); }
+.weight-medium   { font-weight: var(--weight-medium); }
+.weight-semibold { font-weight: var(--weight-semibold); }
+.weight-bold     { font-weight: var(--weight-bold); }
+
+/* ── Font Family Helpers ── */
+
+.font-display { font-family: var(--font-display); }
+.font-body    { font-family: var(--font-body); }
+
+/* ── Special Styles ── */
+
+.text-italic       { font-style: italic; }
+.text-tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* ── Links ── */
+
+.link {
+  color: var(--color-text-link);
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.link:hover {
+  color: var(--color-text-link-hover);
+  text-decoration: underline;
+}
+
+/* ── Paragraph ── */
+
+p {
+  max-width: 65ch;
+}
+
+p + p {
+  margin-top: var(--space-4);
+}
+
+/* ── Responsive Typography ── */
+
+@media (max-width: 1279px) {
+  .text-display {
+    font-size: 2.75rem;  /* 44px */
+  }
+  .text-3xl, .page-title {
+    font-size: 1.875rem; /* 30px */
+  }
+  .text-2xl, .section-heading {
+    font-size: 1.5rem;   /* 24px */
+  }
+}
+
+@media (max-width: 767px) {
+  .text-display {
+    font-size: 2.25rem;  /* 36px */
+  }
+  .text-3xl, .page-title {
+    font-size: 1.625rem; /* 26px */
+  }
+  .text-2xl, .section-heading {
+    font-size: 1.375rem; /* 22px */
+  }
+}
