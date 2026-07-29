@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import Sidebar from './components/Sidebar';
-import './styles/expenses.css';
+import AppShell from './components/AppShell.jsx';
 import { expenseApi, analyticsApi } from './lib/api.js';
 import { useReference, colorForCategory } from './lib/reference.jsx';
 
@@ -251,14 +250,9 @@ export default function ExpensesPage() {
     n >= 1000 ? `₹${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 2)}k` : `₹${n.toFixed(2)}`;
 
   return (
-    <div className="app-shell" data-screen-label="Expenses">
-      <div className="botanical-overlay" />
-      <Sidebar active="expenses" />
-
-      <main className="app-main">
-        <div className="app-main__content">
-          {/* Top bar */}
-          <div className="expenses__topbar">
+    <AppShell active="expenses" dataScreenLabel="Expenses">
+      {/* Top bar */}
+      <div className="expenses__topbar">
             <h1 className="expenses__title">Expenses Page</h1>
             <button
               className="btn btn--primary"
@@ -427,8 +421,6 @@ export default function ExpensesPage() {
               </div>
             </section>
           </div>
-        </div>
-      </main>
-    </div>
+    </AppShell>
   );
 }

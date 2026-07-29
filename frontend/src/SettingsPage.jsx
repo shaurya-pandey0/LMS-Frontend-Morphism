@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import Sidebar from './components/Sidebar';
+import AppShell from './components/AppShell.jsx';
 import { useReference } from './lib/reference.jsx';
 import { ApiError } from './lib/api.js';
 
@@ -109,13 +109,9 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="app-shell" data-screen-label="Settings">
-      <div className="botanical-overlay" />
-      <Sidebar active="settings" />
-
-      <main className="app-main">
-        <div className="app-main__content" style={{ maxWidth: '560px' }}>
-          <h1 className="card__title" style={{ marginBottom: 'var(--space-5)' }}>Settings</h1>
+    <AppShell active="settings" dataScreenLabel="Settings">
+      <div style={{ maxWidth: '560px', margin: '0 auto' }}>
+        <h1 className="card__title" style={{ marginBottom: 'var(--space-5)' }}>Settings</h1>
 
           <section className="card" id="card-settings">
             {loading ? (
@@ -328,7 +324,6 @@ export default function SettingsPage() {
             )}
           </section>
         </div>
-      </main>
-    </div>
+    </AppShell>
   );
 }

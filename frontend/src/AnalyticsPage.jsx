@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import Sidebar from './components/Sidebar';
+import AppShell from './components/AppShell.jsx';
 import './styles/analytics.css';
 import { analyticsApi } from './lib/api.js';
 
@@ -107,15 +107,10 @@ export default function AnalyticsPage() {
   }, [dailyExpenseData]);
 
   return (
-    <div className="app-shell" data-screen-label="Analytics">
-      <div className="botanical-overlay" />
-      <Sidebar active="analytics" />
-
-      <main className="app-main">
-        <div className="app-main__content">
-          <div className="analytics__header">
-            <h1 className="analytics__title">Your Lifestyle Trends &amp; Historical Analytics</h1>
-          </div>
+    <AppShell active="analytics" dataScreenLabel="Analytics">
+      <div className="analytics__header">
+        <h1 className="analytics__title">Your Lifestyle Trends &amp; Historical Analytics</h1>
+      </div>
 
           {/* Master date-range filter bar */}
           <div className="range-bar" id="analytics-range-bar">
@@ -200,8 +195,6 @@ export default function AnalyticsPage() {
               )}
             </section>
           </div>
-        </div>
-      </main>
-    </div>
+    </AppShell>
   );
 }

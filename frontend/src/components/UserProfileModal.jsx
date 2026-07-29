@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../lib/auth.jsx';
 
 /**
@@ -21,11 +22,13 @@ export default function UserProfileModal({ open, onClose }) {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [open, onClose]);
 
-  return (
+  if (!open) return null;
+
+  return createPortal(
     <div
-      className={`modal-overlay${open ? ' modal-overlay--visible' : ''}`}
+      className="modal-overlay modal-overlay--visible"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      aria-hidden={!open}
+      aria-hidden={false}
     >
       <div
         className="modal"
@@ -67,6 +70,8 @@ export default function UserProfileModal({ open, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
+

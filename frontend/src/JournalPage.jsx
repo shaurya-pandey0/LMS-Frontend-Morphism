@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import Sidebar from './components/Sidebar';
-import './styles/journal.css';
+import AppShell from './components/AppShell.jsx';
+import BrandLogo from './components/BrandLogo.jsx';
+import SegmentedTabs from './components/SegmentedTabs.jsx';
 import { journalApi, aiApi, aiContextApi, expenseApi, dailyLogApi } from './lib/api.js';
 import { useAuth } from './lib/auth.jsx';
 import { useReference, moodDisplay } from './lib/reference.jsx';
@@ -289,53 +290,35 @@ export default function JournalPage() {
   };
 
   return (
-    <div className="app-shell" data-screen-label="Journal">
-      <div className="botanical-overlay" />
-      <Sidebar active="journal" />
+    <AppShell active="journal" dataScreenLabel="Journal">
+      {/* Top bar */}
+      <div className="journal__topbar">
+        <div className="journal__brand">
+          <BrandLogo />
+        </div>
 
-      <main className="app-main">
-        <div className="app-main__content">
-          {/* Top bar */}
-          <div className="journal__topbar">
-            <div className="journal__brand">
-              <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                <path d="M16 2C14 8 8 14 4 18C8 17 12 18 14 22C14 18 16 12 22 6C20 8 18 6 16 2Z" fill="#241F1A" />
-              </svg>
-              <span className="sidebar__logo-text">LifeTrack</span>
-            </div>
+        <div className="journal__topbar-actions">
+          <button
+            className="btn btn--primary"
+            id="btn-create-entry"
+            style={{ height: 44 }}
+            onClick={() => { setActiveTab('today'); setEditingId(null); setDraft(''); document.getElementById('journal-textarea')?.focus(); }}
+          >
+            Create New Entry
+          </button>
 
-            <div className="journal__topbar-actions">
-              <button
-                className="btn btn--primary"
-                id="btn-create-entry"
-                style={{ height: 44 }}
-                onClick={() => { setActiveTab('today'); setEditingId(null); setDraft(''); document.getElementById('journal-textarea')?.focus(); }}
-              >
-                Create New Entry
-              </button>
-
-              <div className="journal__tabs" id="journal-tabs" role="tablist" aria-label="Journal View Selector">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === 'today'}
-                  className={`journal__tab ${activeTab === 'today' ? 'journal__tab--active' : ''}`}
-                  onClick={() => setActiveTab('today')}
-                >
-                  Today
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === 'history'}
-                  className={`journal__tab ${activeTab === 'history' ? 'journal__tab--active' : ''}`}
-                  onClick={() => setActiveTab('history')}
-                >
-                  History
-                </button>
-              </div>
-            </div>
-          </div>
+          <SegmentedTabs
+            tabs={[
+              { id: 'today', label: 'Today' },
+              { id: 'history', label: 'History' },
+            ]}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            className="journal__tabs"
+            btnClass="journal__tab"
+          />
+        </div>
+      </div>
 
           <div className="journal__grid">
             {/* ── Column 1: New reflection ── */}
@@ -553,8 +536,6 @@ export default function JournalPage() {
               </section>
             )}
           </div>
-        </div>
-      </main>
-    </div>
+    </AppShell>
   );
 }

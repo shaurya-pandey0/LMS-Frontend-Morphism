@@ -131,6 +131,64 @@
   font-weight: var(--weight-medium);
 }
 
+/* ── Admin table ── */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-base);
+}
+
+.admin-table th {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--taupe-600);
+  border-bottom: 1px solid var(--sand-200);
+}
+
+.admin-table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--sand-100);
+  color: var(--ink-800);
+}
+
+.admin-table tbody tr:hover {
+  background: var(--sand-50, rgba(0,0,0,0.02));
+}
+
+/* ── Admin badges (role / status pills) ── */
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-full, 999px);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.admin-badge--admin {
+  background: var(--clay-100, #e8d5c4);
+  color: var(--clay-700, #7a5a3a);
+}
+
+.admin-badge--user {
+  background: var(--sand-200, #e8e4de);
+  color: var(--taupe-600, #6b6258);
+}
+
+.admin-badge--active {
+  background: var(--sage-100, #d8e4d0);
+  color: var(--sage-700, #4a6b3a);
+}
+
+.admin-badge--inactive {
+  background: var(--sand-200, #e8e4de);
+  color: var(--taupe-500, #8a8078);
+}
+
 /* ── Responsive ── */
 @media (max-width: 1023px) {
   .admin__stats { grid-template-columns: 1fr; }

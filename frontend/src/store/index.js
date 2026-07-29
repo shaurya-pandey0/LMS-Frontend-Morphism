@@ -5,4 +5,11 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: ['auth/login/rejected', 'auth/register/rejected', 'auth/fetchMe/rejected'],
+        ignoredPaths: ['auth.error'],
+      },
+    }),
 });

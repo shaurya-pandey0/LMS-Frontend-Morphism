@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from './components/Sidebar';
+import AppShell from './components/AppShell.jsx';
 import UserProfileModal from './components/UserProfileModal';
 import { analyticsApi, insightsApi, aiApi, aiContextApi } from './lib/api.js';
 import { useAuth } from './lib/auth.jsx';
@@ -158,41 +158,29 @@ export default function DashboardPage() {
   const initials = initialsFor(user?.fullName);
 
   return (
-    <div className="app-shell">
-      {/* Decorative botanical overlay */}
-      <div className="botanical-overlay" />
-
-      {/* ── Sidebar ── */}
-      <Sidebar active="dashboard" />
-
-      {/* ── Top Nav ── */}
-      <nav className="topnav" id="dashboard-topnav">
-        <div className="topnav__left" />
-        <div className="topnav__right">
-          <button
-            type="button"
-            id="topnav-profile-trigger"
-            onClick={() => setProfileOpen(true)}
-            aria-label={`Open account info for ${displayName}`}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
-              background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit',
-            }}
-          >
-            <div className="avatar avatar--md avatar--fallback" id="topnav-avatar"
-              style={{ fontSize: 'var(--text-sm)' }}>
-              {initials}
-            </div>
-            <span className="topnav__user-name">{displayName}</span>
-          </button>
-        </div>
-      </nav>
+    <AppShell active="dashboard">
+      {/* ── Top Header / User Profile Trigger ── */}
+      <div id="dashboard-topnav" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
+        <button
+          type="button"
+          id="topnav-profile-trigger"
+          onClick={() => setProfileOpen(true)}
+          aria-label={`Open account info for ${displayName}`}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+            background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit',
+          }}
+        >
+          <div className="avatar avatar--md avatar--fallback" id="topnav-avatar" style={{ fontSize: 'var(--text-sm)' }}>
+            {initials}
+          </div>
+          <span className="topnav__user-name">{displayName}</span>
+        </button>
+      </div>
 
       <UserProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
 
       {/* ── Main Content ── */}
-      <main className="app-main">
-        <div className="app-main__content">
           {error && (
             <div role="alert" className="form-helper form-helper--error" style={{ marginBottom: 'var(--space-3)' }}>
               {error}
@@ -462,10 +450,7 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
-
-          </div>{/* /grid */}
-        </div>{/* /app-main__content */}
-      </main>
-    </div>
+          </div>
+    </AppShell>
   );
 }

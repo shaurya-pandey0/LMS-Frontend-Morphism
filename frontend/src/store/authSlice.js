@@ -19,14 +19,15 @@ function writeUser(user) {
   } catch { /* ignore storage errors */ }
 }
 
-const initialToken = getToken();
-const initialUser = readUser();
-
-const initialState = {
-  user: initialUser,
-  token: initialToken,
-  loading: !!initialToken && !initialUser,
-};
+export function getInitialState() {
+  const token = getToken();
+  const user = readUser();
+  return {
+    user,
+    token,
+    loading: !!token && !user,
+  };
+}
 
 export const fetchMe = createAsyncThunk('auth/fetchMe', async (_, { rejectWithValue }) => {
   try {
@@ -62,7 +63,7 @@ export const registerThunk = createAsyncThunk('auth/register', async ({ fullName
 
 const authSlice = createSlice({
   name: 'auth',
-  initialState,
+  initialState: getInitialState(),
   reducers: {
     setAuth(state, action) {
       const { user, token } = action.payload;

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import './styles/daily-log.css';
 import { dailyLogApi, habitApi } from './lib/api.js';
-import Sidebar from './components/Sidebar';
+import AppShell from './components/AppShell.jsx';
+import SegmentedTabs from './components/SegmentedTabs.jsx';
 import { useReference, moodDisplay } from './lib/reference.jsx';
 
 /* ── Speedometer-style Gauge Component ── */
@@ -391,41 +392,37 @@ export default function DailyLogPage() {
   const activeHabitsCount = habits.filter((h) => h.active).length;
 
   return (
-    <div className="app-shell" data-screen-label="DailyLog">
-      <div className="botanical-overlay" />
-      <Sidebar active="daily-log" />
-
-      <main className="app-main">
-        <div className="app-main__content">
-          {/* Header Row with Title and Tabs */}
-          <header className="daily-log__header-row">
-            <div>
-              <h1 className="daily-log__title" id="daily-log-page-title">
-                Daily Log Page: Commit to Balance
-              </h1>
-              <p className="daily-log__subtitle">
-                {activeTab === 'log'
-                  ? (editingId ? `Editing Log Entry for ${editingDate}` : "Log today's activity, wellbeing metrics, habits, and meals.")
-                  : "View and manage historical daily log entries."}
-              </p>
-            </div>
-            <div className="daily-log__tabs" id="daily-log-tabs">
-              <button
-                type="button"
-                className={`daily-log__tab ${activeTab === 'log' ? 'daily-log__tab--active' : ''}`}
-                onClick={() => setActiveTab('log')}
-              >
-                Log Today
-              </button>
-              <button
-                type="button"
-                className={`daily-log__tab ${activeTab === 'history' ? 'daily-log__tab--active' : ''}`}
-                onClick={() => { setActiveTab('history'); setHistoryLoading(true); setHistoryError(''); resetForm(); }}
-              >
-                History
-              </button>
-            </div>
-          </header>
+    <AppShell active="daily-log" dataScreenLabel="DailyLog">
+      {/* Header Row with Title and Tabs */}
+      <header className="daily-log__header-row">
+        <div>
+          <h1 className="daily-log__title" id="daily-log-page-title">
+            Daily Log Page: Commit to Balance
+          </h1>
+          <p className="daily-log__subtitle">
+            {activeTab === 'log'
+              ? (editingId ? `Editing Log Entry for ${editingDate}` : "Log today's activity, wellbeing metrics, habits, and meals.")
+              : "View and manage historical daily log entries."}
+          </p>
+        </div>
+        <SegmentedTabs
+          tabs={[
+            { id: 'log', label: 'Log Today' },
+            { id: 'history', label: 'History' },
+          ]}
+          activeTab={activeTab}
+          onTabChange={(tabId) => {
+            if (tabId === 'history') {
+              setHistoryLoading(true);
+              setHistoryError('');
+              resetForm();
+            }
+            setActiveTab(tabId);
+          }}
+          className="daily-log__tabs"
+          btnClass="daily-log__tab"
+        />
+      </header>
 
           {activeTab === 'log' ? (
             <>
@@ -904,8 +901,6 @@ export default function DailyLogPage() {
               )}
             </div>
           )}
-        </div>
-      </main>
-    </div>
+    </AppShell>
   );
 }
