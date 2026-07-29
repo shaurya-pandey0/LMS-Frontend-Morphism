@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppShell from './components/AppShell.jsx';
 import UserProfileModal from './components/UserProfileModal';
+import ColorPipelineCard from './components/ColorPipelineCard.jsx';
 import { analyticsApi, insightsApi, aiApi, aiContextApi } from './lib/api.js';
 import { useAuth } from './lib/auth.jsx';
 import { useReference, colorForCategory } from './lib/reference.jsx';
@@ -213,6 +214,9 @@ export default function DashboardPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Color Theme Pipeline Card */}
+              <ColorPipelineCard />
 
               {/* Health At A Glance — removed: Stress Level, Hydration, and
                   Heart Rate had no backend data source and were hardcoded
