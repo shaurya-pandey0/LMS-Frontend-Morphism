@@ -1,16 +1,20 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { Provider } from 'react-redux'
 import './index.css'
 import App from './App.jsx'
-import { AuthProvider } from './lib/auth.jsx'
+import { store } from './store'
+import { AuthInit } from './lib/auth.jsx'
 import { ReferenceProvider } from './lib/reference.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <AuthProvider>
-      <ReferenceProvider>
-        <App />
-      </ReferenceProvider>
-    </AuthProvider>
+    <Provider store={store}>
+      <AuthInit>
+        <ReferenceProvider>
+          <App />
+        </ReferenceProvider>
+      </AuthInit>
+    </Provider>
   </StrictMode>,
 )

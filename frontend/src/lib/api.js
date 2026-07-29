@@ -1,21 +1,20 @@
-// Thin fetch wrapper that talks to the Spring Boot backend.
-//
-// Responsibilities:
-//   - Attach the JWT from localStorage to every request.
-//   - Parse JSON and raise an ApiError with status + server message on non-2xx.
-//   - On 401, clear the token and emit a custom event the AuthProvider listens to.
+import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+const AI_BASE = import.meta.env.VITE_AI_BASE_URL || 'http://localhost:8100';
 const TOKEN_KEY = 'lifetrack.token';
 
+/** Custom error class wrapping HTTP status, message, and field validation errors */
 export class ApiError extends Error {
-  constructor(status, message, fieldErrors) {
+  constructor(status, message, fieldErrors = null) {
     super(message);
+    this.name = 'ApiError';
     this.status = status;
-    this.fieldErrors = fieldErrors || null;
+    this.fieldErrors = fieldErrors;
   }
 }
 
+/** Retrieves JWT authorization token from localStorage */
 export function getToken() {
   try {
     return localStorage.getItem(TOKEN_KEY);
@@ -24,6 +23,7 @@ export function getToken() {
   }
 }
 
+/** Stores or removes JWT authorization token in localStorage */
 export function setToken(token) {
   try {
     if (token) localStorage.setItem(TOKEN_KEY, token);
@@ -31,179 +31,140 @@ export function setToken(token) {
   } catch { /* ignore storage errors */ }
 }
 
-async function request(path, { method = 'GET', body, auth = true, signal } = {}) {
-  const headers = { 'Accept': 'application/json' };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+// Shared Axios client instances
+const springClient = axios.create({ baseURL: API_BASE, headers: { Accept: 'application/json' } });
+const aiClient = axios.create({ baseURL: AI_BASE, headers: { Accept: 'application/json' } });
 
-  if (auth) {
+// Attach JWT token to Spring Boot requests unless skipAuth is true
+springClient.interceptors.request.use((config) => {
+  if (!config.skipAuth) {
     const token = getToken();
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (token) config.headers.Authorization = `Bearer ${token}`;
   }
+  return config;
+});
 
-  let res;
-  try {
-    res = await fetch(`${API_BASE}${path}`, {
-      method,
-      headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-      signal,
-    });
-  } catch (err) {
-    if (err.name === 'AbortError') throw err;
-    throw new ApiError(0, 'Cannot reach the server. Check that the backend is running.');
+// Shared error handler for Axios clients
+function handleAxiosError(error, fallbackMsg, isSpring = false) {
+  // Preserve request cancellation
+  if (axios.isCancel(error) || error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
+    return Promise.reject(error);
   }
-
-  // 204 No Content
-  if (res.status === 204) return null;
-
-  let payload = null;
-  const text = await res.text();
-  if (text) {
-    try { payload = JSON.parse(text); } catch { payload = text; }
-  }
-
-  if (!res.ok) {
-    if (res.status === 401) {
+  // Server responded with non-2xx status code
+  if (error.response) {
+    if (isSpring && error.response.status === 401) {
       setToken(null);
       window.dispatchEvent(new CustomEvent('lifetrack:unauthorized'));
     }
-    const message = (payload && typeof payload === 'object' && payload.message)
-      || (typeof payload === 'string' ? payload : `Request failed (${res.status})`);
-    const fieldErrors = (payload && typeof payload === 'object' && payload.errors) || null;
-    throw new ApiError(res.status, message, fieldErrors);
-  }
+    const data = error.response.data;
+    let rawMsg = data && typeof data === 'object' ? (data.message || data.detail) : (typeof data === 'string' ? data : null);
 
-  return payload;
+    // Normalize FastAPI 422 array errors or object details into string
+    if (Array.isArray(rawMsg)) {
+      rawMsg = rawMsg.map((err) => (typeof err === 'object' && err?.msg ? err.msg : String(err))).join('; ');
+    } else if (rawMsg && typeof rawMsg === 'object') {
+      rawMsg = rawMsg.msg || rawMsg.message || JSON.stringify(rawMsg);
+    }
+
+    const message = (typeof rawMsg === 'string' && rawMsg.trim().length > 0)
+      ? rawMsg
+      : `Request failed (${error.response.status})`;
+    const fieldErrors = (data && typeof data === 'object' && data.errors) || null;
+
+    return Promise.reject(new ApiError(error.response.status, message, fieldErrors));
+  }
+  // Network failure or backend unreachable
+  return Promise.reject(new ApiError(0, fallbackMsg));
 }
 
-export const api = {
-  get: (path, opts) => request(path, { ...opts, method: 'GET' }),
-  post: (path, body, opts) => request(path, { ...opts, method: 'POST', body }),
-  put: (path, body, opts) => request(path, { ...opts, method: 'PUT', body }),
-  del: (path, opts) => request(path, { ...opts, method: 'DELETE' }),
-};
+// Return response.data directly from interceptors
+springClient.interceptors.response.use(
+  (res) => (res.status === 204 ? null : res.data),
+  (err) => handleAxiosError(err, 'Cannot reach the server. Check that the backend is running.', true)
+);
 
-// ---- Typed endpoint helpers (matches backend/README.md) --------------------
+aiClient.interceptors.response.use(
+  (res) => res.data,
+  (err) => handleAxiosError(err, 'AI service is unavailable.')
+);
+
+// ---- Domain Endpoint Helpers ------------------------------------------------
+
+/** User Authentication endpoints (/api/auth) */
 export const authApi = {
-  register: (data) => api.post('/auth/register', data, { auth: false }),
-  login: (data) => api.post('/auth/login', data, { auth: false }),
-  me: () => api.get('/auth/me'),
+  register: (data) => springClient.post('/auth/register', data, { skipAuth: true }),
+  login: (data) => springClient.post('/auth/login', data, { skipAuth: true }),
+  me: () => springClient.get('/auth/me'),
 };
 
+/** Daily Logs management endpoints (/api/daily-logs) */
 export const dailyLogApi = {
-  list: () => api.get('/daily-logs'),
-  // Returns null (204) when nothing is logged for today yet.
-  today: () => api.get('/daily-logs/today'),
-  byDate: (date) => api.get(`/daily-logs?date=${date}`),
-  get: (id) => api.get(`/daily-logs/${id}`),
-  upsert: (data) => api.post('/daily-logs', data),
-  merge: (data) => api.post('/daily-logs/merge', data),
-  update: (id, data) => api.put(`/daily-logs/${id}`, data),
-  remove: (id) => api.del(`/daily-logs/${id}`),
+  list: () => springClient.get('/daily-logs'),
+  merge: (data) => springClient.post('/daily-logs/merge', data),
+  update: (id, data) => springClient.put(`/daily-logs/${id}`, data),
+  remove: (id) => springClient.delete(`/daily-logs/${id}`),
 };
 
+/** Habit tracking endpoints (/api/habits) */
 export const habitApi = {
-  list: (date) => api.get(date ? `/habits?date=${date}` : '/habits'),
-  create: (data) => api.post('/habits', data),
-  update: (id, data) => api.put(`/habits/${id}`, data),
-  deactivate: (id) => api.del(`/habits/${id}`),
-  toggle: (id, date, completed) => {
-    const params = new URLSearchParams();
-    if (date) params.append('date', date);
-    if (completed !== undefined && completed !== null) params.append('completed', String(completed));
-    const queryString = params.toString();
-    return api.post(`/habits/${id}/toggle${queryString ? `?${queryString}` : ''}`);
-  },
+  list: (date) => springClient.get('/habits', { params: { date } }),
+  create: (data) => springClient.post('/habits', data),
+  update: (id, data) => springClient.put(`/habits/${id}`, data),
+  deactivate: (id) => springClient.delete(`/habits/${id}`),
+  toggle: (id, date, completed) => springClient.post(`/habits/${id}/toggle`, null, { params: { date, completed } }),
 };
 
+/** Expense management endpoints (/api/expenses) */
 export const expenseApi = {
-  list: (from, to) => {
-    const params = new URLSearchParams();
-    if (from) params.set('from', from);
-    if (to) params.set('to', to);
-    const q = params.toString();
-    return api.get(q ? `/expenses?${q}` : '/expenses');
-  },
-  create: (data) => api.post('/expenses', data),
-  update: (id, data) => api.put(`/expenses/${id}`, data),
-  remove: (id) => api.del(`/expenses/${id}`),
+  list: (from, to) => springClient.get('/expenses', { params: { from, to } }),
+  create: (data) => springClient.post('/expenses', data),
+  update: (id, data) => springClient.put(`/expenses/${id}`, data),
+  remove: (id) => springClient.delete(`/expenses/${id}`),
 };
 
+/** Personal Journal endpoints (/api/journal) */
 export const journalApi = {
-  list: () => api.get('/journal'),
-  create: (data) => api.post('/journal', data),
-  update: (id, data) => api.put(`/journal/${id}`, data),
-  remove: (id) => api.del(`/journal/${id}`),
+  list: () => springClient.get('/journal'),
+  create: (data) => springClient.post('/journal', data),
+  update: (id, data) => springClient.put(`/journal/${id}`, data),
+  remove: (id) => springClient.delete(`/journal/${id}`),
 };
 
+/** Lifestyle Analytics endpoints (/api/analytics) */
 export const analyticsApi = {
-  summary: (from, to) => {
-    const params = new URLSearchParams();
-    if (from) params.set('from', from);
-    if (to) params.set('to', to);
-    const q = params.toString();
-    return api.get(q ? `/analytics?${q}` : '/analytics');
-  },
+  summary: (from, to) => springClient.get('/analytics', { params: { from, to } }),
 };
 
+/** Rule-based Insights endpoints (/api/insights) */
 export const insightsApi = {
-  list: () => api.get('/insights'),
+  list: () => springClient.get('/insights'),
 };
 
+/** Admin Statistics & User Management endpoints (/api/admin) */
 export const adminApi = {
-  stats: () => api.get('/admin/stats'),
-  users: () => api.get('/admin/users'),
+  stats: () => springClient.get('/admin/stats'),
+  users: () => springClient.get('/admin/users'),
 };
 
-// Domain vocabulary (categories, habit catalogs, moods) — backend owns these.
+/** Domain Vocabulary & Reference metadata (/api/reference) */
 export const referenceApi = {
-  get: () => api.get('/reference'),
+  get: () => springClient.get('/reference'),
 };
 
-// Per-user targets (monthly budget, sleep/step/water targets).
+/** User Goals & Target Settings (/api/settings) */
 export const settingsApi = {
-  get: () => api.get('/settings'),
-  update: (data) => api.put('/settings', data),
+  get: () => springClient.get('/settings'),
+  update: (data) => springClient.put('/settings', data),
 };
 
-// Aggregated lifestyle context for the AI service. Built by Spring so the
-// browser never assembles domain data or names whose context to read.
+/** Aggregated Lifestyle Context for AI processing (/api/ai-context) */
 export const aiContextApi = {
-  get: (days) => api.get(days ? `/ai-context?days=${days}` : '/ai-context'),
+  get: (days) => springClient.get('/ai-context', { params: { days } }),
 };
 
-// ---- AI microservice (separate FastAPI service, no JWT in dev) -------------
-const AI_BASE = import.meta.env.VITE_AI_BASE_URL || 'http://localhost:8100';
-
-async function aiRequest(path, body, { method = 'POST', signal } = {}) {
-  let res;
-  try {
-    res = await fetch(`${AI_BASE}${path}`, {
-      method,
-      headers: body !== undefined
-        ? { 'Content-Type': 'application/json', 'Accept': 'application/json' }
-        : { 'Accept': 'application/json' },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-      signal,
-    });
-  } catch (err) {
-    if (err.name === 'AbortError') throw err;
-    throw new ApiError(0, 'AI service is unavailable.');
-  }
-  const text = await res.text();
-  let payload = null;
-  if (text) { try { payload = JSON.parse(text); } catch { payload = text; } }
-  if (!res.ok) {
-    const message = (payload && typeof payload === 'object' && (payload.detail || payload.message))
-      || `AI request failed (${res.status})`;
-    throw new ApiError(res.status, typeof message === 'string' ? message : 'AI request failed');
-  }
-  return payload;
-}
-
+/** FastAPI AI Microservice endpoints (/chat, /insights, /command) */
 export const aiApi = {
-  health: () => aiRequest('/health', undefined, { method: 'GET' }),
-  chat: (payload) => aiRequest('/chat', payload),
-  insights: (payload) => aiRequest('/insights', payload),
-  command: (payload) => aiRequest('/command', payload),
+  chat: (payload, opts) => aiClient.post('/chat', payload, opts),
+  insights: (payload, opts) => aiClient.post('/insights', payload, opts),
+  command: (payload, opts) => aiClient.post('/command', payload, opts),
 };
