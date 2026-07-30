@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
-import AppShell from './components/AppShell.jsx';
-import { expenseApi, analyticsApi } from './lib/api.js';
-import { useReference, colorForCategory } from './lib/reference.jsx';
+import AppShell from '../components/AppShell.jsx';
+import { expenseApi, analyticsApi } from '../lib/api.js';
+import { useReference, colorForCategory } from '../lib/reference.jsx';
+import { todayIso, isoToShort, getDefaultFromDate, getDefaultToDate } from '../lib/date.js';
 
 /* Category list comes from the backend (/api/reference); only the colour
    mapping lives here, since that's presentation. */
@@ -77,44 +78,15 @@ function DonutChart({ segments }) {
   );
 }
 
-/* Friendly "Dec 27"-style label from an ISO yyyy-mm-dd. */
-function isoToShort(iso) {
-  if (!iso) return '';
-  const d = new Date(iso + 'T00:00:00');
-  if (isNaN(d)) return iso;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-function formatLocalDate(d) {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function getDefaultFromDate() {
-  const now = new Date();
-  return formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1));
-}
-
-function getDefaultToDate() {
-  return formatLocalDate(new Date());
-}
-
-function todayIso() {
-  return formatLocalDate(new Date());
-}
-
 export default function ExpensesPage() {
   const { expenseCategories } = useReference();
 
-  const [fromDate] = useState(getDefaultFromDate);
-  const [toDate] = useState(getDefaultToDate);
+  const fromDate = getDefaultFromDate();
+  const toDate = getDefaultToDate();
 
-  const [categoryChoice, setCategoryChoice] = useState('');
+  const [categoryChoice, setCategory] = useState('');
   const defaultCategory = () => expenseCategories[0] || '';
   const category = categoryChoice || defaultCategory();
-  const setCategory = setCategoryChoice;
 
   const [editingId, setEditingId] = useState(null);
   const [analytics, setAnalytics] = useState(null);

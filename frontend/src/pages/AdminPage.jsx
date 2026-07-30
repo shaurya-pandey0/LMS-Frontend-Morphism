@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './styles/admin.css';
-import { adminApi } from './lib/api.js';
-import AppShell from './components/AppShell.jsx';
-import BrandLogo from './components/BrandLogo.jsx';
-import { useAuth } from './lib/auth.jsx';
+import '../styles/admin.css';
+import { adminApi } from '../lib/api.js';
+import AppShell from '../components/AppShell.jsx';
+import BrandLogo from '../components/BrandLogo.jsx';
+import { useAuth } from '../lib/auth.jsx';
 
 /* ── Admin-specific sidebar nav items ── */
 const StatsIcon = () => (

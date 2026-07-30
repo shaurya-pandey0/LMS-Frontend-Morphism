@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import AppShell from './components/AppShell.jsx';
-import { useReference } from './lib/reference.jsx';
-import { ApiError } from './lib/api.js';
+import AppShell from '../components/AppShell.jsx';
+import { useReference } from '../lib/reference.jsx';
+import { ApiError } from '../lib/api.js';
 
 /**
  * Settings page — persists all user preferences via GET/PUT /api/settings.

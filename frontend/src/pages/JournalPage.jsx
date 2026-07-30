@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import AppShell from './components/AppShell.jsx';
-import BrandLogo from './components/BrandLogo.jsx';
-import SegmentedTabs from './components/SegmentedTabs.jsx';
-import { journalApi, aiApi, aiContextApi, expenseApi, dailyLogApi } from './lib/api.js';
-import { useAuth } from './lib/auth.jsx';
-import { useReference, moodDisplay } from './lib/reference.jsx';
+import AppShell from '../components/AppShell.jsx';
+import BrandLogo from '../components/BrandLogo.jsx';
+import SegmentedTabs from '../components/SegmentedTabs.jsx';
+import { journalApi, aiApi, aiContextApi, expenseApi, dailyLogApi } from '../lib/api.js';
+import { useAuth } from '../lib/auth.jsx';
+import { useReference, moodDisplay } from '../lib/reference.jsx';
+import { todayIso } from '../lib/date.js';
 
 /* Mood vocabulary comes from the backend (/api/reference); only the
    emoji/label chrome is presentation — see lib/reference.jsx. */
@@ -16,17 +17,6 @@ function formatDate(iso) {
   const [y, m, d] = iso.split('-').map(Number);
   if (!y) return iso;
   return `${m}/${d}/${y}`;
-}
-
-function formatLocalDate(d) {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function todayIso() {
-  return formatLocalDate(new Date());
 }
 
 /* Ensure list items (1., 2., 3. or - ) crammed together on a single line

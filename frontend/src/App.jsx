@@ -1,17 +1,16 @@
-import { Component } from 'react';
+import { Component, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
-import LandingPage from './LandingPage';
-import AboutPage from './AboutPage';
-import LoginPage from './LoginPage';
-import RegisterPage from './RegisterPage';
-import DailyLogPage from './DailyLogPage';
-import DashboardPage from './DashboardPage';
-import ExpensesPage from './ExpensesPage';
-import JournalPage from './JournalPage';
-import AnalyticsPage from './AnalyticsPage';
-import AdminPage from './AdminPage';
-import SettingsPage from './SettingsPage';
+import LandingPage from './pages/LandingPage';
+import AboutPage from './pages/AboutPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import DailyLogPage from './pages/DailyLogPage';
+import DashboardPage from './pages/DashboardPage';
+import ExpensesPage from './pages/ExpensesPage';
+import JournalPage from './pages/JournalPage';
+import AnalyticsPage from './pages/AnalyticsPage';
+import AdminPage from './pages/AdminPage';
+import SettingsPage from './pages/SettingsPage';
 import { useAuth } from './lib/auth.jsx';
 
 /* Reset scroll position when navigating between pages */

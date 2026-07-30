@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AppShell from './components/AppShell.jsx';
-import UserProfileModal from './components/UserProfileModal';
-import ColorPipelineCard from './components/ColorPipelineCard.jsx';
-import { analyticsApi, insightsApi, aiApi, aiContextApi } from './lib/api.js';
-import { useAuth } from './lib/auth.jsx';
-import { useReference, colorForCategory } from './lib/reference.jsx';
+import AppShell from '../components/AppShell.jsx';
+import UserProfileModal from '../components/UserProfileModal';
+import ColorPipelineCard from '../components/ColorPipelineCard.jsx';
+import { analyticsApi, insightsApi, aiApi, aiContextApi } from '../lib/api.js';
+import { useAuth } from '../lib/auth.jsx';
+import { useReference, colorForCategory } from '../lib/reference.jsx';
+import { weekdayShort } from '../lib/date.js';
 
 /* ─── Donut chart (SVG) ─────────────────────────────────── */
 function DonutChart({ segments }) {
@@ -40,13 +41,6 @@ function DonutChart({ segments }) {
 }
 
 /* ─── Dashboard ─────────────────────────────────────────── */
-function weekdayShort(iso) {
-  if (!iso) return '';
-  const d = new Date(iso + 'T00:00:00');
-  if (isNaN(d)) return iso;
-  return d.toLocaleDateString('en-US', { weekday: 'short' });
-}
-
 function initialsFor(name) {
   if (!name) return '?';
   const parts = name.trim().split(/\s+/).slice(0, 2);

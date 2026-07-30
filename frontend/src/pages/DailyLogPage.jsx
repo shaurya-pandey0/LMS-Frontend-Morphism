@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import './styles/daily-log.css';
-import { dailyLogApi, habitApi } from './lib/api.js';
-import AppShell from './components/AppShell.jsx';
-import SegmentedTabs from './components/SegmentedTabs.jsx';
-import { useReference, moodDisplay } from './lib/reference.jsx';
+import '../styles/daily-log.css';
+import { dailyLogApi, habitApi } from '../lib/api.js';
+import AppShell from '../components/AppShell.jsx';
+import SegmentedTabs from '../components/SegmentedTabs.jsx';
+import { useReference, moodDisplay } from '../lib/reference.jsx';
+import { todayIso } from '../lib/date.js';
 
 /* ── Speedometer-style Gauge Component ── */
 function Gauge({ value = 0, max = 100 }) {
@@ -77,17 +78,6 @@ function MoodOptions({ moods }) {
       })}
     </>
   );
-}
-
-function formatLocalDate(d) {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function todayIso() {
-  return formatLocalDate(new Date());
 }
 
 export default function DailyLogPage() {

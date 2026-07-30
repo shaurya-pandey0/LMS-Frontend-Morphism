@@ -6,7 +6,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '../authSlice';
 import { AuthInit } from '../../lib/auth';
 import { authApi, ApiError } from '../../lib/api';
-import LoginPage from '../../LoginPage';
+import LoginPage from '../../pages/LoginPage';
 
 vi.mock('../../lib/api', async () => {
   const actual = await vi.importActual('../../lib/api');

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import botanicalShadow from './assets/botanical-shadow.png';
+import botanicalShadow from '../assets/botanical-shadow.png';
 
 /**
  * LifeTrack Landing Page

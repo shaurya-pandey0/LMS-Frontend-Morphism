@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from './lib/auth.jsx';
-import { ApiError } from './lib/api.js';
-import AuthShell from './components/AuthShell.jsx';
-import BrandLogo from './components/BrandLogo.jsx';
-import PasswordInput from './components/PasswordInput.jsx';
+import { useAuth } from '../lib/auth.jsx';
+import { ApiError } from '../lib/api.js';
+import AuthShell from '../components/AuthShell.jsx';
+import BrandLogo from '../components/BrandLogo.jsx';
+import PasswordInput from '../components/PasswordInput.jsx';
 
 /**
  * LifeTrack Registration Page

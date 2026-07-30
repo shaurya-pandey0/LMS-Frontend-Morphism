@@ -1,23 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
-import AppShell from './components/AppShell.jsx';
-import './styles/analytics.css';
-import { analyticsApi } from './lib/api.js';
-
-function formatLocalDate(d) {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function getDefaultFromDate() {
-  const now = new Date();
-  return formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1));
-}
-
-function getDefaultToDate() {
-  return formatLocalDate(new Date());
-}
+import AppShell from '../components/AppShell.jsx';
+import '../styles/analytics.css';
+import { analyticsApi } from '../lib/api.js';
+import { getDefaultFromDate, getDefaultToDate } from '../lib/date.js';
 
 /* ── Line / area chart ── */
 function LineAreaChart({ data, yLabels, max }) {

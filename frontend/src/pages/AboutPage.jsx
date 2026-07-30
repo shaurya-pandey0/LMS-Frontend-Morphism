@@ -1,15 +1,15 @@
 import { Link } from 'react-router-dom';
-import botanicalShadow from './assets/botanical-shadow.png';
-import './styles/about.css';
+import botanicalShadow from '../assets/botanical-shadow.png';
+import '../styles/about.css';
 
-const TEAM_PHOTOS = import.meta.glob('./assets/team/*.webp', {
+const TEAM_PHOTOS = import.meta.glob('../assets/team/*.webp', {
   eager: true,
   import: 'default',
   query: '?url',
 });
 
 function getTeamPhoto(filename) {
-  return TEAM_PHOTOS[`./assets/team/${filename}`] ?? null;
+  return TEAM_PHOTOS[`../assets/team/${filename}`] ?? null;
 }
 
 const TEAM = [
