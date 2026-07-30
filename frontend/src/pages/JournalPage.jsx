@@ -109,7 +109,7 @@ export default function JournalPage() {
           mood,
           text: draft.trim(),
         });
-        setEntries((prev) => prev.map((e) =>
+        setEntries((prev) => (prev || []).map((e) =>
           e.id === editingId ? { ...e, mood: updated.mood, text: updated.text, date: formatDate(updated.date), isoDate: updated.date } : e
         ));
         setEditingId(null);
@@ -125,7 +125,7 @@ export default function JournalPage() {
           isoDate: created.date,
           mood: created.mood,
           text: created.text,
-        }, ...prev]);
+        }, ...(prev || [])]);
       }
       setDraft('');
       setMood('');
@@ -146,7 +146,7 @@ export default function JournalPage() {
 
   const deleteEntry = async (id) => {
     const snapshot = entries;
-    setEntries((prev) => prev.filter((e) => e.id !== id));
+    setEntries((prev) => (prev || []).filter((e) => e.id !== id));
     if (editingId === id) { setEditingId(null); setDraft(''); setMood(''); }
     try {
       await journalApi.remove(id);
