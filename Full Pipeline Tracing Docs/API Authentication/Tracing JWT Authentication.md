@@ -399,7 +399,27 @@ all other API routes -> authenticated
 
 The API is stateless and authenticates using an explicit Bearer token rather than an automatically attached server session cookie. CSRF protection is mainly designed for cookie-authenticated requests.
 
-This does not eliminate XSS risk. The current frontend stores JWT in `localStorage`, so a successful script injection could read it.
+This does not eliminate XSS risk. The current frontend stores JWT in `localStorage`, so a successful script injection could read it. This is a deliberate simplicity trade-off, not an oversight; the alternative is an httpOnly cookie, which then reintroduces the CSRF concern this section just dismissed.
+
+### How the frontend holds the token
+
+Relevant when tracing the browser half of this flow:
+
+- `frontend/src/lib/api.js` keeps the token under `lifetrack.token` and attaches
+  `Authorization: Bearer <jwt>` in an axios request interceptor. A call passing
+  `skipAuth: true` sends no header — that is how `/api/auth/login` and
+  `/api/auth/register` avoid sending a stale token.
+- `frontend/src/store/authSlice.js` is the single owner of auth state (`user`,
+  `token`, `loading`) via Redux Toolkit, mirroring both into `localStorage`
+  (`lifetrack.token`, `lifetrack.user`).
+- `frontend/src/lib/auth.jsx` exposes `useAuth()`. Pages never read the store
+  directly.
+- On a hard refresh with a stored token but no cached user, `AuthInit` dispatches
+  `fetchMe()` → `GET /api/auth/me` to re-hydrate.
+- When Spring answers `401`, the response interceptor clears the token and
+  dispatches a `lifetrack:unauthorized` window event; `AuthInit` listens and
+  clears auth state. The event exists to avoid a circular import between
+  `api.js` and the store — expect to be asked why it is not a direct dispatch.
 
 ### Why CORS still matters
 

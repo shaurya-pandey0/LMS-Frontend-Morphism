@@ -8,7 +8,7 @@ expenses and journals, configure personal targets, inspect date-range analytics,
 receive deterministic insights, chat with an AI assistant, and review
 AI-extracted Expense or Daily Log drafts before saving them.
 
-This README describes the current repository as of **29 July 2026**.
+This README describes the current repository as of **30 July 2026**.
 
 ## Architecture
 
@@ -111,7 +111,10 @@ LifeTrack does not currently collect actual smartwatch or step-counter data.
 
 | Layer | Current technology |
 | --- | --- |
-| Frontend | React 19, React Router, Vite 8, JavaScript/JSX |
+| Frontend | React 19, React Router 7, Vite 8, JavaScript/JSX |
+| Frontend state | Redux Toolkit 2 and react-redux for auth; React Context for backend reference vocabulary |
+| Frontend HTTP | axios, with a single client module and interceptor-based JWT attachment |
+| Frontend tests | Vitest 4, React Testing Library, jsdom |
 | Core backend | Java 17, Spring Boot 3.3.4, Spring Web MVC |
 | Security | Spring Security, JWT, BCrypt |
 | Validation | Jakarta Bean Validation and service-level rules |
@@ -132,12 +135,31 @@ Full Pipeline Tracing Docs/  End-to-end feature walkthroughs
 UI/design-system/            Visual tokens and component guidance
 docs/PROJECT-STORY.md        Why and how the architecture evolved
 docs/backend-presentation-plan.md
+Integration Seams.md         Service-to-service contracts and trust boundaries
 Page Component Adding Guide.md
 MyQnA.md
 Grafana addation.md
 start-lifetrack.bat
 start-lifetrack.sh
 ```
+
+The frontend source is organised as:
+
+```text
+frontend/src/
+  main.jsx        Provider tree: Redux -> AuthInit -> ReferenceProvider -> App
+  App.jsx         Routes, ProtectedRoute, ScrollToTop, ErrorBoundary
+  pages/          One component per route (11 pages)
+  components/     Shared shells plus extracted page sections
+  lib/            api.js, auth.jsx, reference.jsx, date.js, useApi.js
+  store/          Redux store, authSlice, __tests__/
+  styles/         Design tokens and stylesheets
+  assets/         Images
+```
+
+`lib/api.js` is the only place axios is used; `lib/date.js` is the only place
+date formatting lives; `lib/useApi.js` provides the shared
+load/error/reload hook.
 
 ## Local services
 
@@ -347,22 +369,31 @@ Set-Location backend
 Set-Location ..\frontend
 npm.cmd run lint
 npm.cmd run build
+npm.cmd test
 
 Set-Location ..\ai-service
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-Current automated coverage includes five FastAPI `/command` tests. The repository
-does not yet contain Spring JUnit tests or React component tests, so it should not
-be presented as fully test-driven.
+Current automated coverage is five FastAPI `/command` tests plus ten frontend
+Vitest tests covering the Redux `authSlice` and the auth flow, including a
+`LoginPage` integration test that mocks the API module. There are still no Spring
+JUnit tests, and React coverage outside authentication is thin, so this should
+not be presented as fully test-driven.
 
-Verified on 29 July 2026:
+Frontend checks verified on 30 July 2026:
+
+| Check | Result |
+| --- | --- |
+| Frontend ESLint | Passed, no errors |
+| Frontend production build | Passed, 275 modules transformed |
+| Frontend Vitest | Passed, 10 tests across 2 files |
+
+Backend and AI checks last verified on 29 July 2026:
 
 | Check | Result |
 | --- | --- |
 | Spring `clean compile` | `BUILD SUCCESS`, 64 Java source files |
-| Frontend ESLint | Passed |
-| Frontend production build | Passed, 205 modules transformed |
 | FastAPI command tests | Passed, 5 tests |
 
 ## Demo data
@@ -383,7 +414,15 @@ It does not create users or credentials. Confirm those IDs before running it.
 - Legacy Daily Log habit collections remain for compatibility
 - Some entity relationships use raw owner IDs instead of full JPA associations
   and database foreign keys
-- Spring and React automated test coverage is incomplete
+- Spring and React automated test coverage is incomplete; React tests cover
+  authentication only
+- Frontend state is split between Redux (auth) and React Context (reference
+  vocabulary) rather than one mechanism
+- Expense categories, mood values and day types are declared in Spring, in the
+  FastAPI service and in the React presentation layer, so adding one means
+  editing three places
+- `tailwindcss` is installed but not wired into the build; styling is
+  hand-authored CSS with design tokens
 - MySQL credentials, the fallback JWT secret, public Actuator and Grafana's
   default credentials are development-only
 - `ddl-auto: update` is not a production migration strategy
@@ -392,6 +431,8 @@ It does not create users or credentials. Confirm those IDs before running it.
 ## Documentation
 
 - [Project story](docs/PROJECT-STORY.md) — how and why the system evolved
+- [Integration seams](Integration%20Seams.md) — service-to-service contracts, the
+  LLM validation boundary and the known gaps at each seam
 - [Backend presentation plan](docs/backend-presentation-plan.md)
 - [Interview Q&A](MyQnA.md)
 - [Page component guide](Page%20Component%20Adding%20Guide.md)

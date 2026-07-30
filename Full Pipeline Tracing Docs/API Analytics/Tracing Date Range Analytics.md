@@ -33,9 +33,11 @@ Analytics proves that the backend is more than CRUD. It demonstrates:
 - `backend/src/main/java/com/lifetrack/repository/JournalEntryRepository.java`
 - `backend/src/main/java/com/lifetrack/service/UserSettingsService.java`
 - `backend/src/main/java/com/lifetrack/entity/UserSettings.java`
-- `frontend/src/AnalyticsPage.jsx`
-- `frontend/src/ExpensesPage.jsx`
+- `frontend/src/pages/AnalyticsPage.jsx`
+- `frontend/src/pages/ExpensesPage.jsx`
 - `frontend/src/lib/api.js`
+- `frontend/src/lib/useApi.js`
+- `frontend/src/lib/date.js`
 
 ## Before the demonstration
 
@@ -345,27 +347,46 @@ No `userId` query parameter is accepted.
 
 ## Step 10: Connect the API to React
 
+Both pages fetch through the shared `useApi(fetchFn, deps)` hook in
+`frontend/src/lib/useApi.js`, which owns the loading flag, the error string, and
+the request-cancellation guard. Neither page hand-rolls a `useEffect` fetch.
+
 `AnalyticsPage`:
 
 ```text
-reads From and To date controls
-    -> analyticsApi.summary(from, to)
+reads From and To date controls (real useState, user-changeable)
+    -> useApi(() => analyticsApi.summary(from, to), [from, to])
     -> GET /api/analytics?from=...&to=...
     -> plots sleepPoints and dailyExpenses
 ```
 
-`ExpensesPage` requests:
+Changing either date control changes the hook's dependencies, which re-runs the
+request. The page holds no separate copy of the summary.
+
+`ExpensesPage` requests both in one `fetchFn`:
 
 ```text
-expenseApi.list(from, to)
-analyticsApi.summary(from, to)
+useApi(async () => {
+  const [rows, summary] = await Promise.all([
+    expenseApi.list(from, to),
+    analyticsApi.summary(from, to),
+  ]);
+  return { txns: mapped(rows), analytics: summary };
+}, [from, to])
 ```
 
-using the same range. It displays backend-computed:
+using the same range, and calls the hook's `reload()` after a create, update or
+delete. It displays backend-computed:
 
-- total spend;
-- category breakdown;
-- budget usage.
+- total spend (`analytics.totalExpenses`);
+- category breakdown (`analytics.expensesByCategory`);
+- budget usage (`analytics.budgetUsagePct`).
+
+Both range endpoints are handed local calendar dates produced by
+`frontend/src/lib/date.js` (`getDefaultFromDate` is the first of the current
+month, `getDefaultToDate` is today). Those helpers use the local date getters
+rather than `toISOString()`, so the range is not shifted by the user's UTC
+offset.
 
 React still performs presentation calculations such as SVG coordinates and visual scales. It does not recompute trusted totals from transaction rows.
 

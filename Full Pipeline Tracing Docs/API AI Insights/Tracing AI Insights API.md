@@ -52,8 +52,9 @@ Spring Boot owns user identity, persistence, preferences, aggregation, and thres
 
 ### React
 
-- `frontend/src/DashboardPage.jsx`
-- `frontend/src/lib/api.js`
+- `frontend/src/pages/DashboardPage.jsx` — insight cards, calls `/api/ai-context` then FastAPI `/insights`
+- `frontend/src/pages/JournalPage.jsx` — assistant chat and `/command` drafts
+- `frontend/src/lib/api.js` — `aiContextApi` on `springClient`, `aiApi` on `aiClient`
 
 ### Python AI service
 
@@ -255,6 +256,20 @@ moodCounts                  -> mood_counts
 ```
 
 The current Dashboard mapping does not forward `journalExcerpts`. State this honestly if asked; the Spring context supports them, but the Dashboard Insights request currently omits them.
+
+The same translation exists twice in the frontend, in two different styles.
+`DashboardPage.jsx` maps inline inside its `aiApi.insights({ ... })` call, while
+`JournalPage.jsx` uses a named `toAiContext(ctx)` helper for the chat path and
+*does* forward `journal_excerpts`, `avg_steps` and `today_steps`.
+
+If asked why the mapping lives in the browser at all: this is the same
+orchestration point recorded in `Integration Seams.md` section 8.2. Spring builds
+the trusted context, the browser only relays and renames fields, and moving the
+call server-to-server would remove the client from that path entirely.
+
+One field on this seam does not come from Spring: `local_time` is generated in
+the browser with `new Date().toLocaleString()`, so its formatting varies by
+machine locale.
 
 ## Step 5: Execute the AI request through FastAPI docs
 

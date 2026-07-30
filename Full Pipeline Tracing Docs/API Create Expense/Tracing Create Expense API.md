@@ -401,6 +401,47 @@ Expected result:
 
 Run the same analytics range once more. The deleted amount should no longer contribute to totals or category aggregation.
 
+## Step 9: The browser side of the same slice
+
+Optional, for when the demonstration runs through the UI rather than Swagger.
+The relevant file is `frontend/src/pages/ExpensesPage.jsx`.
+
+Loading uses the shared `useApi` hook, so the expense list and the analytics
+summary arrive from one `fetchFn` and share a single loading flag and error
+string.
+
+Writes are optimistic, then reconciled:
+
+```text
+user submits the form
+    -> await expenseApi.create(payload)         (POST /api/expenses, JWT attached)
+    -> setData: prepend the returned row to txns
+    -> reload()                                 (re-read list + analytics)
+```
+
+Delete is the interesting one, because it shows the rollback:
+
+```text
+snapshot = current data
+    -> setData: remove the row immediately
+    -> await expenseApi.remove(id)
+       success -> reload()
+       failure -> setData(snapshot) and show the error
+```
+
+Two points worth making explicitly if asked:
+
+- The row the UI keeps is the row **Spring returned**, not the object the form
+  submitted. The server-assigned `id` and any server-applied date default are
+  therefore what get rendered.
+- After a successful write the page still calls `reload()`. The optimistic
+  update is only for perceived latency; the trusted totals in section "Step 4"
+  are re-fetched rather than adjusted locally.
+
+Dates come from `frontend/src/lib/date.js`. An omitted date field sends
+`todayIso()`, the browser's local calendar date, which matches the service-side
+default described in Step 2.
+
 ## A concise interview narration
 
 > I will demonstrate Expenses as one complete vertical slice. I first authenticate and give Swagger the JWT. I create an expense using only date, category, and amount; user ownership comes from the token rather than the body. The controller validates the request contract, the service applies server-owned category rules and date defaults, and the repository persists the entity through Hibernate to MySQL. I read it back through a date-filtered endpoint to prove persistence, then call Analytics to show that another backend service aggregates the same record. Finally, I demonstrate invalid input, ownership isolation, update, and deletion.

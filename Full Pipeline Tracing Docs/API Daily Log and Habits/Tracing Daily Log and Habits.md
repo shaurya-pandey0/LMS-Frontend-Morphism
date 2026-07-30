@@ -620,6 +620,77 @@ If repeated lifecycle periods must be historically exact, introduce a `HabitActi
 
 `DailyHabitCompletion` stores `habitId` as a scalar rather than a JPA `@ManyToOne`. The service enforces ownership/existence, but the current entity model does not declare a database foreign-key relationship through JPA.
 
+## The browser side
+
+Optional, for a UI-driven demonstration. Files:
+`frontend/src/pages/DailyLogPage.jsx` and
+`frontend/src/components/DailyLogHistory.jsx`.
+
+### How the merge payload is built
+
+The eleven scalar log fields (sleep, steps, water, the four 1–5 wellbeing
+ratings, day type and the three moods) live in a single `form` state object with
+one `setField(name, value)` updater, seeded from a module-level `EMPTY_FORM`.
+
+`handleSave` converts that object into the merge request, and the conversion is
+what makes partial check-ins work from the UI:
+
+```text
+''            -> null      (field omitted from the user's intent)
+'7.5'         -> 7.5       parseFloat for sleepHours / waterIntake
+'4'           -> 4         parseInt for the 1-5 ratings and stepTarget
+```
+
+An all-blank form is rejected in the browser before any request is sent, with
+the same intent as the server-side empty-submission rule in Step 4:
+
+```text
+Object.values(form).every((v) => v === '')
+  && completedHabitNames.length === 0
+  && meals.length === 0
+```
+
+This is a convenience guard, not the authority. The service still rejects an
+empty merge independently.
+
+### Editing a historical record
+
+`handleEdit` repopulates `form` from a history row. Note the deliberate
+asymmetry, because it matters for a stored value of `0`:
+
+```text
+numeric fields  ->  log.sleepHours != null ? String(log.sleepHours) : ''
+string fields   ->  log.dayType || ''
+```
+
+Using `||` on the numeric fields would blank out a legitimately stored zero.
+Editing then targets `PUT /api/daily-logs/{id}` (full replacement, Step 6)
+rather than the merge endpoint.
+
+### Habits
+
+The habit checkbox is optimistic with rollback, matching the pattern used
+elsewhere in the app:
+
+```text
+flip completedToday locally
+    -> await habitApi.toggle(id, targetDate, nextCompleted)
+       failure -> restore the previous value and show the error
+```
+
+`targetDate` is `editingDate || todayIso()`, so toggling while editing a past
+log records the completion against **that** date, not today. The five-active-habit
+limit is checked in the browser for immediate feedback and enforced by the
+service regardless.
+
+### History tab
+
+Rendered by `DailyLogHistory`, which receives `logs`, `loading`, `error`,
+`onEdit` and `onDelete` as props and owns no fetching. Deletion is optimistic
+with a snapshot rollback. All dates come from `frontend/src/lib/date.js`, so the
+UI's notion of "today" is the machine's local calendar date and matches the
+`date` field the merge endpoint receives.
+
 ## Concise interview narration
 
 > Daily Log is not ordinary append-only CRUD. A unique user/date key represents one logical day, while the merge endpoint accepts multiple partial check-ins without clearing omitted values. Scalars overwrite only when supplied, and meals merge by case-insensitive name while preserving items. Meals are stored through a JSON converter because they contain a nested item list. Habits use a separate definition-and-observation model: UserHabit stores the reusable user-owned definition, and DailyHabitCompletion stores one completion state per habit/date. Deactivation is soft so history remains available. All reads and writes are scoped to the JWT user.
