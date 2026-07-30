@@ -1,8 +1,9 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import AppShell from '../components/AppShell.jsx';
 import { expenseApi, analyticsApi } from '../lib/api.js';
 import { useReference, colorForCategory } from '../lib/reference.jsx';
 import { todayIso, isoToShort, getDefaultFromDate, getDefaultToDate } from '../lib/date.js';
+import { useApi } from '../lib/useApi.js';
 
 /* Category list comes from the backend (/api/reference); only the colour
    mapping lives here, since that's presentation. */
@@ -85,54 +86,35 @@ export default function ExpensesPage() {
   const toDate = getDefaultToDate();
 
   const [categoryChoice, setCategory] = useState('');
-  const defaultCategory = () => expenseCategories[0] || '';
+  const defaultCategory = useCallback(() => expenseCategories[0] || '', [expenseCategories]);
   const category = categoryChoice || defaultCategory();
 
   const [editingId, setEditingId] = useState(null);
-  const [analytics, setAnalytics] = useState(null);
-
-  const [txns, setTxns] = useState([]);
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState('');
   const [amountError, setAmountError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [pageError, setPageError] = useState('');
+  const [actionError, setActionError] = useState('');
 
-  const refreshData = () => {
-    Promise.all([expenseApi.list(fromDate, toDate), analyticsApi.summary(fromDate, toDate)])
-      .then(([data, summaryData]) => {
-        setTxns((data || []).map((e) => ({
-          id: e.id,
-          isoDate: e.date,
-          date: isoToShort(e.date),
-          category: e.category,
-          amount: Number(e.amount),
-        })));
-        setAnalytics(summaryData);
-      })
-      .catch(() => {});
-  };
-
-  // Load expenses and backend-computed analytics on mount using same PC-local current-month range.
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([expenseApi.list(fromDate, toDate), analyticsApi.summary(fromDate, toDate)])
-      .then(([data, summaryData]) => {
-        if (cancelled) return;
-        setTxns((data || []).map((e) => ({
-          id: e.id,
-          isoDate: e.date,
-          date: isoToShort(e.date),
-          category: e.category,
-          amount: Number(e.amount),
-        })));
-        setAnalytics(summaryData);
-        setPageError('');
-      })
-      .catch((err) => { if (!cancelled) setPageError(err.message || 'Could not load expenses'); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+  const fetchExpenses = useCallback(async () => {
+    const [data, summaryData] = await Promise.all([
+      expenseApi.list(fromDate, toDate),
+      analyticsApi.summary(fromDate, toDate),
+    ]);
+    const mappedTxns = (data || []).map((e) => ({
+      id: e.id,
+      isoDate: e.date,
+      date: isoToShort(e.date),
+      category: e.category,
+      amount: Number(e.amount),
+    }));
+    return { txns: mappedTxns, analytics: summaryData };
   }, [fromDate, toDate]);
+
+  const { data, setData, loading, error: apiError, reload } = useApi(fetchExpenses, [fromDate, toDate]);
+
+  const txns = data?.txns || [];
+  const analytics = data?.analytics || null;
+  const pageError = apiError || actionError;
 
   const handleSubmit = async () => {
     const value = parseFloat(amount);
@@ -142,28 +124,34 @@ export default function ExpensesPage() {
       return;
     }
     setAmountError('');
-    setPageError('');
+    setActionError('');
     const iso = date || todayIso();
     const payload = { date: iso, category, amount: value };
 
     try {
       if (editingId !== null) {
         const updated = await expenseApi.update(editingId, payload);
-        setTxns((prev) => prev.map((t) => (t.id === editingId
-          ? { id: updated.id, isoDate: updated.date, date: isoToShort(updated.date), category: updated.category, amount: Number(updated.amount) }
-          : t)));
+        setData((prev) => ({
+          ...prev,
+          txns: (prev?.txns || []).map((t) => (t.id === editingId
+            ? { id: updated.id, isoDate: updated.date, date: isoToShort(updated.date), category: updated.category, amount: Number(updated.amount) }
+            : t)),
+        }));
         setEditingId(null);
       } else {
         const created = await expenseApi.create(payload);
         const row = { id: created.id, isoDate: created.date, date: isoToShort(created.date), category: created.category, amount: Number(created.amount) };
-        setTxns((prev) => [row, ...prev]);
+        setData((prev) => ({
+          ...prev,
+          txns: [row, ...(prev?.txns || [])],
+        }));
       }
       setAmount('');
       setDate('');
       setCategory(defaultCategory());
-      refreshData();
+      reload();
     } catch (err) {
-      setPageError(err.message || 'Could not save that expense');
+      setActionError(err.message || 'Could not save that expense');
     }
   };
 
@@ -173,7 +161,7 @@ export default function ExpensesPage() {
     setCategory(t.category);
     setDate(t.isoDate || '');
     setAmountError('');
-    setPageError('');
+    setActionError('');
     document.getElementById('entry-amount')?.focus();
   };
 
@@ -186,8 +174,11 @@ export default function ExpensesPage() {
   };
 
   const handleDelete = async (id) => {
-    const snapshot = txns;
-    setTxns((prev) => prev.filter((t) => t.id !== id));
+    const snapshot = data;
+    setData((prev) => ({
+      ...prev,
+      txns: (prev?.txns || []).filter((t) => t.id !== id),
+    }));
     if (editingId === id) {
       setEditingId(null);
       setAmount('');
@@ -196,10 +187,10 @@ export default function ExpensesPage() {
     }
     try {
       await expenseApi.remove(id);
-      refreshData();
+      reload();
     } catch (err) {
-      setTxns(snapshot);
-      setPageError(err.message || 'Could not delete that expense');
+      setData(snapshot);
+      setActionError(err.message || 'Could not delete that expense');
     }
   };
 
