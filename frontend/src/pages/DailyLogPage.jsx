@@ -3,6 +3,7 @@ import '../styles/daily-log.css';
 import { dailyLogApi, habitApi } from '../lib/api.js';
 import AppShell from '../components/AppShell.jsx';
 import SegmentedTabs from '../components/SegmentedTabs.jsx';
+import DailyLogHistory from '../components/DailyLogHistory.jsx';
 import { useReference, moodDisplay } from '../lib/reference.jsx';
 import { todayIso } from '../lib/date.js';
 
@@ -835,61 +836,13 @@ export default function DailyLogPage() {
             </>
           ) : (
             /* ── History Tab ── */
-            <div className="card" id="card-daily-log-history">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
-                <h2 className="daily-log-card__title" style={{ margin: 0 }}>Historical Daily Logs</h2>
-                <span className="text-sm text-secondary">{historyLogs.length} entries</span>
-              </div>
-
-              {historyLoading ? (
-                <div className="txn-empty">Loading log history…</div>
-              ) : historyError ? (
-                <div role="alert" className="form-helper form-helper--error">{historyError}</div>
-              ) : historyLogs.length === 0 ? (
-                <div className="txn-empty">No daily logs recorded yet.</div>
-              ) : (
-                <div className="history-list">
-                  {historyLogs.map((log) => (
-                    <div key={log.id} className="history-item">
-                      <div>
-                        <div className="history-item__date">{log.date}</div>
-                        <div className="history-item__details">
-                          {log.sleepHours != null && <span className="history-item__chip">Sleep: {log.sleepHours} hrs</span>}
-                          {log.stepTarget != null && <span className="history-item__chip">Step target: {log.stepTarget}</span>}
-                          {log.waterIntake != null && <span className="history-item__chip">Water: {log.waterIntake} mL</span>}
-                          {log.dayType && <span className="history-item__chip">Day: {log.dayType}</span>}
-                          {log.sleepQuality != null && <span className="history-item__chip">Quality: {log.sleepQuality}/5</span>}
-                          {log.stressLevel != null && <span className="history-item__chip">Stress: {log.stressLevel}/5</span>}
-                          {log.energyLevel != null && <span className="history-item__chip">Energy: {log.energyLevel}/5</span>}
-                          {log.productivityLevel != null && <span className="history-item__chip">Productivity: {log.productivityLevel}/5</span>}
-                          {Array.isArray(log.meals) && log.meals.length > 0 && (
-                            <span className="history-item__chip">Meals: {log.meals.length}</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="history-item__actions">
-                        <button
-                          type="button"
-                          className="btn btn--secondary"
-                          style={{ padding: '4px 12px', fontSize: 'var(--text-xs)' }}
-                          onClick={() => handleEdit(log)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn--secondary"
-                          style={{ padding: '4px 12px', fontSize: 'var(--text-xs)', color: 'var(--clay-700)' }}
-                          onClick={() => handleDelete(log.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <DailyLogHistory
+              logs={historyLogs}
+              loading={historyLoading}
+              error={historyError}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           )}
     </AppShell>
   );
