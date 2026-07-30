@@ -81,20 +81,70 @@ function MoodOptions({ moods }) {
   );
 }
 
+const DAY_TYPES = [
+  { value: 'STUDY_WORK', label: 'Study / Work' },
+  { value: 'DAY_OFF', label: 'Day Off' },
+  { value: 'TRAVEL', label: 'Travel' },
+  { value: 'SICK', label: 'Sick' },
+  { value: 'UNUSUAL', label: 'Unusual' },
+];
+
+const QUALITY_SCALE = [
+  { value: '1', label: '1 - Very Poor' },
+  { value: '2', label: '2 - Poor' },
+  { value: '3', label: '3 - Fair' },
+  { value: '4', label: '4 - Good' },
+  { value: '5', label: '5 - Excellent' },
+];
+
+const LEVEL_SCALE = [
+  { value: '1', label: '1 - Very Low' },
+  { value: '2', label: '2 - Low' },
+  { value: '3', label: '3 - Moderate' },
+  { value: '4', label: '4 - High' },
+  { value: '5', label: '5 - Very High' },
+];
+
+function MetricSelect({ id, label, placeholder, options, value, onChange }) {
+  return (
+    <div className="metric-row">
+      <div className="metric-row__input-group">
+        <label className="metric-row__label" htmlFor={id}>{label}</label>
+        <select id={id} className="metric-row__input" value={value} onChange={onChange}>
+          <option value="">{placeholder}</option>
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+const EMPTY_FORM = {
+  sleepHours: '',
+  stepTarget: '',
+  waterIntake: '',
+  sleepQuality: '',
+  stressLevel: '',
+  energyLevel: '',
+  productivityLevel: '',
+  dayType: '',
+  morningMood: '',
+  afternoonMood: '',
+  eveningMood: '',
+};
+
 export default function DailyLogPage() {
   const { dailyMoods } = useReference();
 
   const [activeTab, setActiveTab] = useState('log');
 
-  /* Activity & Wellbeing Metrics — Form opens BLANK by default */
-  const [sleepHours, setSleepHours] = useState('');
-  const [stepTarget, setStepTarget] = useState('');
-  const [waterIntake, setWaterIntake] = useState('');
-  const [sleepQuality, setSleepQuality] = useState('');
-  const [stressLevel, setStressLevel] = useState('');
-  const [energyLevel, setEnergyLevel] = useState('');
-  const [productivityLevel, setProductivityLevel] = useState('');
-  const [dayType, setDayType] = useState('');
+  /* Activity, Wellbeing & Mood Metrics — Form state */
+  const [form, setForm] = useState(EMPTY_FORM);
+  const setField = (name, value) => setForm((f) => ({ ...f, [name]: value }));
 
   /* Persistent User Habits */
   const [habits, setHabits] = useState([]);
@@ -107,11 +157,6 @@ export default function DailyLogPage() {
   const [meals, setMeals] = useState([]);
   const [customMealName, setCustomMealName] = useState('Breakfast');
   const [newMealItem, setNewMealItem] = useState('');
-
-  /* Moods */
-  const [morningMood, setMorningMood] = useState('');
-  const [afternoonMood, setAfternoonMood] = useState('');
-  const [eveningMood, setEveningMood] = useState('');
 
   /* Edit state */
   const [editingId, setEditingId] = useState(null);
@@ -142,20 +187,10 @@ export default function DailyLogPage() {
   }, [editingDate]);
 
   const resetForm = () => {
-    setSleepHours('');
-    setStepTarget('');
-    setWaterIntake('');
-    setSleepQuality('');
-    setStressLevel('');
-    setEnergyLevel('');
-    setProductivityLevel('');
-    setDayType('');
+    setForm(EMPTY_FORM);
     setMeals([]);
     setCustomMealName('Breakfast');
     setNewMealItem('');
-    setMorningMood('');
-    setAfternoonMood('');
-    setEveningMood('');
     setEditingId(null);
     setEditingDate('');
     habitApi.list(todayIso())
@@ -254,19 +289,9 @@ export default function DailyLogPage() {
     const completedHabitNames = habits.filter((h) => h.completedToday).map((h) => h.name);
 
     const isFormEmpty =
-      sleepHours === '' &&
-      stepTarget === '' &&
-      waterIntake === '' &&
-      sleepQuality === '' &&
-      stressLevel === '' &&
-      energyLevel === '' &&
-      productivityLevel === '' &&
-      dayType === '' &&
+      Object.values(form).every((v) => v === '') &&
       completedHabitNames.length === 0 &&
-      meals.length === 0 &&
-      morningMood === '' &&
-      afternoonMood === '' &&
-      eveningMood === '';
+      meals.length === 0;
 
     if (editingId === null && isFormEmpty) {
       setSaveError('Please enter or select at least one field to log.');
@@ -277,20 +302,20 @@ export default function DailyLogPage() {
 
     const payload = {
       date: editingDate || todayIso(),
-      sleepHours: sleepHours === '' ? null : parseFloat(sleepHours),
-      stepTarget: stepTarget === '' ? null : parseInt(stepTarget, 10),
-      waterIntake: waterIntake === '' ? null : parseFloat(waterIntake),
-      sleepQuality: sleepQuality === '' ? null : parseInt(sleepQuality, 10),
-      stressLevel: stressLevel === '' ? null : parseInt(stressLevel, 10),
-      energyLevel: energyLevel === '' ? null : parseInt(energyLevel, 10),
-      productivityLevel: productivityLevel === '' ? null : parseInt(productivityLevel, 10),
-      dayType: dayType || null,
+      sleepHours: form.sleepHours === '' ? null : parseFloat(form.sleepHours),
+      stepTarget: form.stepTarget === '' ? null : parseInt(form.stepTarget, 10),
+      waterIntake: form.waterIntake === '' ? null : parseFloat(form.waterIntake),
+      sleepQuality: form.sleepQuality === '' ? null : parseInt(form.sleepQuality, 10),
+      stressLevel: form.stressLevel === '' ? null : parseInt(form.stressLevel, 10),
+      energyLevel: form.energyLevel === '' ? null : parseInt(form.energyLevel, 10),
+      productivityLevel: form.productivityLevel === '' ? null : parseInt(form.productivityLevel, 10),
+      dayType: form.dayType || null,
       transactionalHabits: completedHabitNames,
       embeddedHabits: [],
       meals: meals.map((m) => ({ name: m.name, items: m.items })),
-      morningMood: morningMood || null,
-      afternoonMood: afternoonMood || null,
-      eveningMood: eveningMood || null,
+      morningMood: form.morningMood || null,
+      afternoonMood: form.afternoonMood || null,
+      eveningMood: form.eveningMood || null,
     };
 
     try {
@@ -319,14 +344,19 @@ export default function DailyLogPage() {
         .then((data) => setHabits(data || []))
         .catch((err) => setHabitError(err.message || 'Could not load habits for date'));
     }
-    setSleepHours(log.sleepHours != null ? String(log.sleepHours) : '');
-    setStepTarget(log.stepTarget != null ? String(log.stepTarget) : '');
-    setWaterIntake(log.waterIntake != null ? String(log.waterIntake) : '');
-    setSleepQuality(log.sleepQuality != null ? String(log.sleepQuality) : '');
-    setStressLevel(log.stressLevel != null ? String(log.stressLevel) : '');
-    setEnergyLevel(log.energyLevel != null ? String(log.energyLevel) : '');
-    setProductivityLevel(log.productivityLevel != null ? String(log.productivityLevel) : '');
-    setDayType(log.dayType || '');
+    setForm({
+      sleepHours: log.sleepHours != null ? String(log.sleepHours) : '',
+      stepTarget: log.stepTarget != null ? String(log.stepTarget) : '',
+      waterIntake: log.waterIntake != null ? String(log.waterIntake) : '',
+      sleepQuality: log.sleepQuality != null ? String(log.sleepQuality) : '',
+      stressLevel: log.stressLevel != null ? String(log.stressLevel) : '',
+      energyLevel: log.energyLevel != null ? String(log.energyLevel) : '',
+      productivityLevel: log.productivityLevel != null ? String(log.productivityLevel) : '',
+      dayType: log.dayType || '',
+      morningMood: log.morningMood || '',
+      afternoonMood: log.afternoonMood || '',
+      eveningMood: log.eveningMood || '',
+    });
     if (Array.isArray(log.meals)) {
       setMeals(log.meals.map((m, idx) => ({
         id: idx + 1,
@@ -336,9 +366,6 @@ export default function DailyLogPage() {
     } else {
       setMeals([]);
     }
-    setMorningMood(log.morningMood || '');
-    setAfternoonMood(log.afternoonMood || '');
-    setEveningMood(log.eveningMood || '');
     setSaveOk(false);
     setSaveError('');
     setActiveTab('log');
@@ -438,11 +465,11 @@ export default function DailyLogPage() {
                         min="0"
                         max="24"
                         step="0.5"
-                        value={sleepHours}
-                        onChange={(e) => setSleepHours(e.target.value)}
+                        value={form.sleepHours}
+                        onChange={(e) => setField('sleepHours', e.target.value)}
                       />
                     </div>
-                    <Gauge value={sleepHours ? parseFloat(sleepHours) : 0} max={12} />
+                    <Gauge value={form.sleepHours ? parseFloat(form.sleepHours) : 0} max={12} />
                   </div>
 
                   {/* Step Target */}
@@ -459,11 +486,11 @@ export default function DailyLogPage() {
                         min="0"
                         max="50000"
                         step="500"
-                        value={stepTarget}
-                        onChange={(e) => setStepTarget(e.target.value)}
+                        value={form.stepTarget}
+                        onChange={(e) => setField('stepTarget', e.target.value)}
                       />
                     </div>
-                    <Gauge value={stepTarget ? parseInt(stepTarget, 10) : 0} max={15000} />
+                    <Gauge value={form.stepTarget ? parseInt(form.stepTarget, 10) : 0} max={15000} />
                   </div>
 
                   {/* Water Intake */}
@@ -480,8 +507,8 @@ export default function DailyLogPage() {
                         min="0"
                         max="10000"
                         step="250"
-                        value={waterIntake}
-                        onChange={(e) => setWaterIntake(e.target.value)}
+                        value={form.waterIntake}
+                        onChange={(e) => setField('waterIntake', e.target.value)}
                       />
                     </div>
                   </div>
@@ -496,8 +523,8 @@ export default function DailyLogPage() {
                         <select
                           id="morning-mood"
                           className="mood-item__select"
-                          value={morningMood}
-                          onChange={(e) => setMorningMood(e.target.value)}
+                          value={form.morningMood}
+                          onChange={(e) => setField('morningMood', e.target.value)}
                         >
                           <MoodOptions moods={dailyMoods} />
                         </select>
@@ -507,8 +534,8 @@ export default function DailyLogPage() {
                         <select
                           id="afternoon-mood"
                           className="mood-item__select"
-                          value={afternoonMood}
-                          onChange={(e) => setAfternoonMood(e.target.value)}
+                          value={form.afternoonMood}
+                          onChange={(e) => setField('afternoonMood', e.target.value)}
                         >
                           <MoodOptions moods={dailyMoods} />
                         </select>
@@ -518,8 +545,8 @@ export default function DailyLogPage() {
                         <select
                           id="evening-mood"
                           className="mood-item__select"
-                          value={eveningMood}
-                          onChange={(e) => setEveningMood(e.target.value)}
+                          value={form.eveningMood}
+                          onChange={(e) => setField('eveningMood', e.target.value)}
                         >
                           <MoodOptions moods={dailyMoods} />
                         </select>
@@ -734,100 +761,46 @@ export default function DailyLogPage() {
                     <h2 className="daily-log-card__title">Self-Reported Wellbeing</h2>
 
                     <div className="wellbeing-group">
-                      <div className="metric-row">
-                        <div className="metric-row__input-group">
-                          <label className="metric-row__label" htmlFor="day-type">Day Type</label>
-                          <select
-                            id="day-type"
-                            className="metric-row__input"
-                            value={dayType}
-                            onChange={(e) => setDayType(e.target.value)}
-                          >
-                            <option value="">Select Day Type…</option>
-                            <option value="STUDY_WORK">Study / Work</option>
-                            <option value="DAY_OFF">Day Off</option>
-                            <option value="TRAVEL">Travel</option>
-                            <option value="SICK">Sick</option>
-                            <option value="UNUSUAL">Unusual</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="metric-row">
-                        <div className="metric-row__input-group">
-                          <label className="metric-row__label" htmlFor="sleep-quality">Sleep Quality</label>
-                          <select
-                            id="sleep-quality"
-                            className="metric-row__input"
-                            value={sleepQuality}
-                            onChange={(e) => setSleepQuality(e.target.value)}
-                          >
-                            <option value="">Select (1–5)…</option>
-                            <option value="1">1 - Very Poor</option>
-                            <option value="2">2 - Poor</option>
-                            <option value="3">3 - Fair</option>
-                            <option value="4">4 - Good</option>
-                            <option value="5">5 - Excellent</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="metric-row">
-                        <div className="metric-row__input-group">
-                          <label className="metric-row__label" htmlFor="stress-level">Stress Level</label>
-                          <select
-                            id="stress-level"
-                            className="metric-row__input"
-                            value={stressLevel}
-                            onChange={(e) => setStressLevel(e.target.value)}
-                          >
-                            <option value="">Select (1–5)…</option>
-                            <option value="1">1 - Very Low</option>
-                            <option value="2">2 - Low</option>
-                            <option value="3">3 - Moderate</option>
-                            <option value="4">4 - High</option>
-                            <option value="5">5 - Very High</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="metric-row">
-                        <div className="metric-row__input-group">
-                          <label className="metric-row__label" htmlFor="energy-level">Energy Level</label>
-                          <select
-                            id="energy-level"
-                            className="metric-row__input"
-                            value={energyLevel}
-                            onChange={(e) => setEnergyLevel(e.target.value)}
-                          >
-                            <option value="">Select (1–5)…</option>
-                            <option value="1">1 - Very Low</option>
-                            <option value="2">2 - Low</option>
-                            <option value="3">3 - Moderate</option>
-                            <option value="4">4 - High</option>
-                            <option value="5">5 - Very High</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="metric-row">
-                        <div className="metric-row__input-group">
-                          <label className="metric-row__label" htmlFor="productivity-level">Productivity / Study</label>
-                          <select
-                            id="productivity-level"
-                            className="metric-row__input"
-                            value={productivityLevel}
-                            onChange={(e) => setProductivityLevel(e.target.value)}
-                          >
-                            <option value="">Select (1–5)…</option>
-                            <option value="1">1 - Very Low</option>
-                            <option value="2">2 - Low</option>
-                            <option value="3">3 - Moderate</option>
-                            <option value="4">4 - High</option>
-                            <option value="5">5 - Very High</option>
-                          </select>
-                        </div>
-                      </div>
+                      <MetricSelect
+                        id="day-type"
+                        label="Day Type"
+                        placeholder="Select Day Type…"
+                        options={DAY_TYPES}
+                        value={form.dayType}
+                        onChange={(e) => setField('dayType', e.target.value)}
+                      />
+                      <MetricSelect
+                        id="sleep-quality"
+                        label="Sleep Quality"
+                        placeholder="Select (1–5)…"
+                        options={QUALITY_SCALE}
+                        value={form.sleepQuality}
+                        onChange={(e) => setField('sleepQuality', e.target.value)}
+                      />
+                      <MetricSelect
+                        id="stress-level"
+                        label="Stress Level"
+                        placeholder="Select (1–5)…"
+                        options={LEVEL_SCALE}
+                        value={form.stressLevel}
+                        onChange={(e) => setField('stressLevel', e.target.value)}
+                      />
+                      <MetricSelect
+                        id="energy-level"
+                        label="Energy Level"
+                        placeholder="Select (1–5)…"
+                        options={LEVEL_SCALE}
+                        value={form.energyLevel}
+                        onChange={(e) => setField('energyLevel', e.target.value)}
+                      />
+                      <MetricSelect
+                        id="productivity-level"
+                        label="Productivity / Study"
+                        placeholder="Select (1–5)…"
+                        options={LEVEL_SCALE}
+                        value={form.productivityLevel}
+                        onChange={(e) => setField('productivityLevel', e.target.value)}
+                      />
                     </div>
                   </div>
 
