@@ -1,8 +1,9 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import AppShell from '../components/AppShell.jsx';
 import '../styles/analytics.css';
 import { analyticsApi } from '../lib/api.js';
 import { getDefaultFromDate, getDefaultToDate } from '../lib/date.js';
+import { useApi } from '../lib/useApi.js';
 
 /* ── Line / area chart ── */
 function LineAreaChart({ data, yLabels, max }) {
@@ -52,18 +53,9 @@ function LineAreaChart({ data, yLabels, max }) {
 export default function AnalyticsPage() {
   const [fromDate, setFromDate] = useState(getDefaultFromDate);
   const [toDate, setToDate] = useState(getDefaultToDate);
-  const [summary, setSummary] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [summaryError, setSummaryError] = useState('');
 
-  useEffect(() => {
-    let cancelled = false;
-    analyticsApi.summary(fromDate, toDate)
-      .then((s) => { if (!cancelled) { setSummary(s); setSummaryError(''); } })
-      .catch((err) => { if (!cancelled) setSummaryError(err.message || 'Could not load analytics'); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [fromDate, toDate]);
+  const fetchSummary = useCallback(() => analyticsApi.summary(fromDate, toDate), [fromDate, toDate]);
+  const { data: summary, loading, error: summaryError } = useApi(fetchSummary, [fromDate, toDate]);
 
   // Map backend sleep points into LineAreaChart's shape.
   const sleepData = useMemo(() => {

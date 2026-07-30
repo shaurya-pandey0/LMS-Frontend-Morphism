@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import AppShell from '../components/AppShell.jsx';
 import BrandLogo from '../components/BrandLogo.jsx';
@@ -7,6 +7,7 @@ import { journalApi, aiApi, aiContextApi, expenseApi, dailyLogApi } from '../lib
 import { useAuth } from '../lib/auth.jsx';
 import { useReference, moodDisplay } from '../lib/reference.jsx';
 import { todayIso } from '../lib/date.js';
+import { useApi } from '../lib/useApi.js';
 
 /* Mood vocabulary comes from the backend (/api/reference); only the
    emoji/label chrome is presentation — see lib/reference.jsx. */
@@ -27,9 +28,6 @@ function formatMarkdownNewlines(text) {
     .replace(/(\S)\s+(\d+[.)])\s+/g, '$1\n\n$2 ')
     .replace(/(\S)\s+([•\-*])\s+/g, '$1\n\n$2 ');
 }
-
-/* ── Seed journal entries ── */
-const INITIAL_ENTRIES = [];
 
 /* Map Spring's /api/ai-context response onto the AI service's snake_case
    LifestyleContext shape. The browser no longer derives any of these numbers —
@@ -65,10 +63,21 @@ export default function JournalPage() {
   const [moodChoice, setMoodChoice] = useState('');
   const mood = moodChoice || journalMoods[0] || '';
   const setMood = setMoodChoice;
-  const [entries, setEntries] = useState(INITIAL_ENTRIES);
+  const fetchEntries = useCallback(async () => {
+    const data = await journalApi.list();
+    return (data || []).map((e) => ({
+      id: e.id,
+      date: formatDate(e.date),
+      isoDate: e.date,
+      mood: e.mood,
+      text: e.text,
+    }));
+  }, []);
+
+  const { data: rawEntries, setData: setEntries, loading, error: loadError } = useApi(fetchEntries, []);
+  const entries = rawEntries || [];
+
   const [editingId, setEditingId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
 
@@ -77,26 +86,6 @@ export default function JournalPage() {
 
   // 3-Mode control for AI Assistant: 'chat' | 'expense' | 'daily_log'
   const [mode, setMode] = useState('chat');
-
-  // Load journal entries from the backend on mount.
-  useEffect(() => {
-    let cancelled = false;
-    journalApi.list()
-      .then((data) => {
-        if (cancelled) return;
-        setEntries((data || []).map((e) => ({
-          id: e.id,
-          date: formatDate(e.date),
-          isoDate: e.date,
-          mood: e.mood,
-          text: e.text,
-        })));
-        setLoadError('');
-      })
-      .catch((err) => { if (!cancelled) setLoadError(err.message || 'Could not load entries'); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, []);
 
   const [chat, setChat] = useState([
     { from: 'bot', text: 'Ask me about your lifestyle — sleep, mood, habits, or spending. Select mode to extract expenses or daily logs.' },
