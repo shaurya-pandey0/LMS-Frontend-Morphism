@@ -87,6 +87,10 @@ class LifestyleContext(BaseModel):
     habit_consistency_threshold: float = Field(default=0.5, ge=0, le=1)
     mood_counts: Dict[str, int] = Field(default_factory=dict)
     journal_excerpts: List[str] = Field(default_factory=list, max_length=20)
+    avg_steps: Optional[float] = Field(default=None, ge=0)
+    today_steps: Optional[int] = Field(default=None, ge=0)
+    min_steps: Optional[int] = Field(default=10000, ge=0)
+    local_time: Optional[str] = Field(default=None, max_length=100)
     notes: Optional[str] = Field(default=None, max_length=2000)
 
 

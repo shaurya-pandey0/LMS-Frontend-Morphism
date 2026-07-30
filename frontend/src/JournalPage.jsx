@@ -60,8 +60,13 @@ function toAiContext(ctx) {
     habit_consistency_threshold: ctx.habitConsistencyThreshold,
     mood_counts: ctx.moodCounts || {},
     journal_excerpts: ctx.journalExcerpts || [],
+    avg_steps: ctx.avgSteps ?? undefined,
+    today_steps: ctx.todaySteps ?? undefined,
+    min_steps: ctx.minSteps ?? undefined,
+    local_time: new Date().toLocaleString(),
   };
 }
+
 
 export default function JournalPage() {
   const { user } = useAuth();

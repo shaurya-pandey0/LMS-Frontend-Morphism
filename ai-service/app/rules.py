@@ -94,6 +94,28 @@ def rule_based_insights(ctx: LifestyleContext) -> List[Insight]:
                 message="Your mood has been largely positive. Keep doing what's working.",
             ))
 
+    # Steps
+    steps_val = ctx.today_steps if ctx.today_steps is not None else ctx.avg_steps
+    if steps_val is not None and ctx.min_steps is not None and ctx.min_steps > 0:
+        if steps_val < ctx.min_steps:
+            insights.append(Insight(
+                category=InsightCategory.GENERAL,
+                severity=Severity.WARNING,
+                title="Below step target",
+                message=(
+                    f"You're currently at {steps_val:.0f} steps, below your "
+                    f"{ctx.min_steps} step target. A short walk can help!"
+                ),
+            ))
+        else:
+            insights.append(Insight(
+                category=InsightCategory.GENERAL,
+                severity=Severity.POSITIVE,
+                title="Step target met",
+                message=f"Great activity! You reached your {ctx.min_steps} step target.",
+            ))
+
+
     if not insights:
         insights.append(Insight(
             category=InsightCategory.GENERAL,

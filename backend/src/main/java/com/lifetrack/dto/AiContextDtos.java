@@ -31,6 +31,9 @@ public class AiContextDtos {
             Double habitConsistency,
             double habitConsistencyThreshold,
             Map<String, Long> moodCounts,
-            List<String> journalExcerpts
+            List<String> journalExcerpts,
+            Double avgSteps,
+            Integer todaySteps,
+            int minSteps
     ) {}
 }

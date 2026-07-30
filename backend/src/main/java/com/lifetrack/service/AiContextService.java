@@ -97,6 +97,18 @@ public class AiContextService {
                 .map(text -> text.length() > MAX_EXCERPT_CHARS ? text.substring(0, MAX_EXCERPT_CHARS) : text)
                 .collect(Collectors.toList());
 
+        Double avgSteps = average(logs.stream()
+                .map(DailyLog::getStepTarget)
+                .filter(java.util.Objects::nonNull)
+                .mapToDouble(Integer::doubleValue));
+
+        Integer todaySteps = logs.stream()
+                .filter(l -> today.equals(l.getDate()))
+                .map(DailyLog::getStepTarget)
+                .filter(java.util.Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+
         return new AiContextResponse(
                 days,
                 avgSleepHours,
@@ -110,7 +122,10 @@ public class AiContextService {
                 habitConsistency,
                 settings.getHabitConsistencyTarget() / 100.0,
                 moodCounts,
-                journalExcerpts
+                journalExcerpts,
+                avgSteps,
+                todaySteps,
+                settings.getStepTarget()
         );
     }
 
