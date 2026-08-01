@@ -451,6 +451,8 @@ apply before a public deployment.
 
 ## Documentation
 
+- [Frontend guide](frontend/README.md) — React, Redux and the data flow, written
+  for developers who do not work in frontend
 - [Deployment guide](DEPLOYMENT.md) — single-VM containerised stack, operations
 - [Split deployment guide](DEPLOYMENT-SPLIT.md) — app and AI service on separate VMs
 - [Deployment file index](DEPLOYMENT-FILES.md) — what every deployment file is for
