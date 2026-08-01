@@ -257,7 +257,14 @@ Uses full `apply()` semantics:
 - omitted collections become empty;
 - effectively replaces the record's content.
 
-It is an upsert because the same user/date updates the existing row.
+It is an upsert because the same user/date updates the existing row. The
+`findByUserIdAndDate` lookup exists precisely so a second submission for the same
+day updates rather than failing on the unique index.
+
+Known inconsistency: the controller returns `201 Created` unconditionally, even
+when the request updated an existing row. `200 OK` would describe the update case
+more accurately. Acknowledge this if asked rather than defending it; the merge
+endpoint next to it correctly returns `200 OK`.
 
 ### `POST /api/daily-logs/merge`
 

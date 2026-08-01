@@ -194,11 +194,19 @@ Example response:
     "great": 7,
     "tired": 1
   },
-  "journalExcerpts": []
+  "journalExcerpts": [],
+  "avgSteps": 8000.0,
+  "todaySteps": 8000,
+  "minSteps": 10000
 }
 ```
 
 Actual values depend on the authenticated user's database records.
+
+`AiContextResponse` has sixteen fields; the three step fields are the last of
+them. Their names deliberately mirror `LifestyleContext` in
+`ai-service/app/schemas.py` so the Python side can deserialise the response
+without re-deriving anything.
 
 ### What Spring calculates
 
@@ -209,16 +217,27 @@ Actual values depend on the authenticated user's database records.
 - calculates average sleep and water intake;
 - totals spending for the selected period;
 - groups expenses by category;
-- counts recorded moods;
+- counts recorded moods, combining Journal moods with the Daily Log's morning,
+  afternoon, and evening moods;
 - calculates habit consistency;
-- loads up to ten recent journal excerpts, truncated to 500 characters;
+- loads up to ten recent journal excerpts, most recent first, truncated to 500
+  characters;
+- reports step figures (see the caveat below);
 - derives the spending threshold as:
 
 ```text
 monthlyBudget × periodDays ÷ 30
 ```
 
-The DTO still exposes the property name `weeklySpend`, but the current value is period spending. During an interview, describe its current semantics accurately.
+Two naming caveats to state accurately during an interview:
+
+- The DTO still exposes the property name `weeklySpend`, but the current value is
+  period spending.
+- `avgSteps` and `todaySteps` are both derived from `DailyLog.stepTarget`, which
+  is the user's **target** for that day, not a measured step count. `minSteps`
+  is the target from `UserSettings`. The app records no actual step data, so
+  these describe intent rather than activity. Do not present them as measured
+  movement.
 
 ## Step 4: Understand the Dashboard handoff
 
@@ -255,12 +274,33 @@ habitConsistencyThreshold   -> habit_consistency_threshold
 moodCounts                  -> mood_counts
 ```
 
-The current Dashboard mapping does not forward `journalExcerpts`. State this honestly if asked; the Spring context supports them, but the Dashboard Insights request currently omits them.
+That is twelve of the sixteen fields Spring returns. The Dashboard mapping
+forwards neither `journalExcerpts` nor any of `avgSteps`, `todaySteps`,
+`minSteps`. State this honestly if asked: Spring supplies them and the Pydantic
+model accepts them, but the Dashboard Insights request drops them, so the model
+never sees journal text or the user's real step target on this path.
+
+What reaches the prompt is then decided by `_context_block()` in `prompts.py`,
+which serialises the context with `model_dump(exclude_none=True)`:
+
+```text
+journal_excerpts  default []      -> not None, so an empty list IS sent
+avg_steps         default None    -> dropped
+today_steps       default None    -> dropped
+min_steps         default 10000   -> not None, so the schema DEFAULT is sent
+```
+
+That last line is the one to be careful about. Because `min_steps` has a
+non-`None` default, the prompt receives `10000` regardless of what the user
+actually configured in Settings. The model is grounded on a schema default that
+was never the user's value.
 
 The same translation exists twice in the frontend, in two different styles.
 `DashboardPage.jsx` maps inline inside its `aiApi.insights({ ... })` call, while
 `JournalPage.jsx` uses a named `toAiContext(ctx)` helper for the chat path and
-*does* forward `journal_excerpts`, `avg_steps` and `today_steps`.
+*does* forward `journal_excerpts`, `avg_steps`, `today_steps` and `min_steps`.
+So the chat and the insight cards are grounded in different subsets of the same
+Spring context — a real inconsistency, not a design decision.
 
 If asked why the mapping lives in the browser at all: this is the same
 orchestration point recorded in `Integration Seams.md` section 8.2. Spring builds
@@ -381,15 +421,28 @@ stream
 response_format
 ```
 
-Immediately before the provider call, the development build overwrites:
+The context block itself is built by `_context_block()`, which serialises the
+validated `LifestyleContext` with `model_dump(exclude_none=True)`. Fields the
+caller omitted are therefore either dropped (when their default is `None`) or
+sent as their schema default — see the note at the end of Step 4.
+
+Immediately before the provider call, `_dump_prompt()` in `llm_client.py`
+overwrites:
 
 ```text
 ai-service/prompt.md
 ```
 
-That file is ignored by Git because it can contain private lifestyle data. It is a debugging snapshot, not application persistence.
+Despite the `.md` extension it contains the raw JSON request body. The file is
+ignored by Git because it can hold private lifestyle data. It is a debugging
+snapshot, not application persistence.
 
-Open it after the request to show the interviewer the exact outbound provider payload.
+Open it after the request to show the interviewer the exact outbound provider
+payload.
+
+A stale `ai-service/prompt.json` may also exist from earlier runs. It is not
+written by the current code path, is now git-ignored, and should not be read as
+the current contract — check the timestamp before trusting it.
 
 ## Step 7: Explain structured-output safety
 

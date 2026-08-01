@@ -461,6 +461,15 @@ zero value
 
 Analytics currently counts Journal moods only. AI context combines Journal and Daily Log moods. These contracts should be aligned if the product expects one definition.
 
+### Category keys are not normalised
+
+`expensesByCategory` groups by the category string exactly as stored on the
+expense row. `ExpenseService` validates the submitted category with
+`equalsIgnoreCase` but persists the raw input, so an expense created as `"food"`
+becomes a separate key from `"Food"` in this map, and the frontend's colour
+lookup falls back to grey for it. The fix belongs on the write side — store the
+canonical value from the reference list — not in this aggregation.
+
 ### Fixed weekly sleep series
 
 `weeklySleep` is always trailing seven days and is independent of the selected range. It exists for Dashboard compatibility but makes `UserAnalyticsResponse` serve two related use cases.

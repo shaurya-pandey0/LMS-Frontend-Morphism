@@ -182,6 +182,32 @@ Wellness
 Misc
 ```
 
+These are defaults in `ReferenceProperties`, not constants. The class is
+`@ConfigurationProperties(prefix = "app.reference")`, so a deployment can
+override the list through `app.reference.expense-categories` (or the matching
+environment variable) without touching code. The same class serves
+`GET /api/reference`, which is how the frontend populates its category buttons.
+
+### Category matching is case-insensitive, storage is not
+
+Worth knowing before a live demonstration. `isValidExpenseCategory` compares with
+`equalsIgnoreCase`, but `ExpenseService.apply()` stores the string exactly as
+submitted:
+
+```java
+expense.setCategory(request.category());
+```
+
+So `"food"` passes validation and persists as `"food"`. Because
+`AnalyticsService` groups by the stored value, that row then forms a **separate
+key** from `"Food"` in `expensesByCategory`, and the frontend's
+`colorForCategory()` finds no match and falls back to grey.
+
+Use the exact casing from the reference list in any demonstration. If asked how
+to fix it, the answer is to normalise on write — resolve the submitted value
+against the reference list and store the canonical form — rather than to
+normalise when reading in analytics.
+
 `ExpenseRepository.save()` causes Hibernate to insert a row into the `expenses` table. MySQL generates the primary key because `Expense.id` uses `GenerationType.IDENTITY`.
 
 The API response deliberately excludes `userId` and `createdAt`. They are internal persistence details, not part of the public expense contract.
@@ -475,6 +501,12 @@ Read the response body. It distinguishes field validation from domain validation
 - category matches the backend reference list;
 - dates use `YYYY-MM-DD`;
 - `from` is not after `to`.
+
+### Category appears twice in analytics, or renders grey
+
+The expense was created with different casing from the reference list. Validation
+accepted it and the raw string was stored. See "Category matching is
+case-insensitive, storage is not" in Step 2.
 
 ### Created record does not appear in a range
 
