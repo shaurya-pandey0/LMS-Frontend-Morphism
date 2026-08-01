@@ -87,22 +87,74 @@ def build_chat_messages(
 
 
 EXPENSE_COMMAND_SYSTEM = (
-    "You are LifeTrack's expense extraction assistant. Your job is to extract structured expense fields "
-    "from the user's input text.\n"
-    "Rules:\n"
-    "1. Base your extraction on the provided text and prior conversation history. NEVER invent missing numbers.\n"
-    "2. If date is not specified, leave it null.\n"
-    "3. Amount must be a positive number (>0) if mentioned in current input or conversation history, else null. Assume currency is Indian Rupees (₹) unless stated otherwise.\n"
-    "4. Category must be strictly one of: Food, Housing, Travel, Wellness, Misc. Map inputs like house/rent to Housing, cab/bus to Travel, doctor/gym to Wellness.\n"
-    "5. If no specific category is mentioned or if the user expresses uncertainty/forgetfulness (e.g. 'dont remember', 'not sure', 'forgot', 'whatever'), set category to 'Misc'.\n"
-    "6. Return ONLY a JSON object matching this exact shape:\n"
-    '{ "date": <YYYY-MM-DD string or null>, "category": <string or null>, "amount": <number or null> }\n'
-    "No text outside the JSON object."
+    "You are LifeTrack's expense extraction assistant. Extract every expense "
+    "described in the user's input.\n"
 )
 
+# What each category *means*. The model is asked to reason about the purpose of
+# the spend, so it can place wording nobody anticipated ("sent money to the
+# house owner") without a synonym table to maintain. Categories are
+# deployment-configurable; any category without an entry here is offered to the
+# model by name alone.
+_CATEGORY_MEANINGS = {
+    "food": "anything eaten or drunk — meals, groceries, eating out, ordering in, snacks, coffee.",
+    "housing": "the cost of having somewhere to live — rent or money paid to a landlord, house owner or "
+               "society, utility and electricity bills, water, maintenance, repairs, furnishings.",
+    "travel": "moving from one place to another — fares, tickets, fuel, ride-hailing, parking, tolls.",
+    "wellness": "health and self-care — doctors, medicines, tests, therapy, gym and fitness.",
+    "misc": "use only when the purpose is genuinely unclear, or the user says they do not know or "
+            "cannot remember.",
+}
 
-def build_expense_command_messages(text: str, default_date: str, history: List[ChatMessage] | None = None) -> List[ChatMessage]:
-    messages: List[ChatMessage] = [ChatMessage(role=Role.SYSTEM, content=EXPENSE_COMMAND_SYSTEM)]
+
+def _category_guide(categories: List[str]) -> str:
+    lines = []
+    for c in categories:
+        meaning = _CATEGORY_MEANINGS.get(c.strip().lower())
+        lines.append(f"   - {c}: {meaning}" if meaning else f"   - {c}")
+    return "\n".join(lines)
+
+
+def _expense_system(categories: List[str], fallback: str) -> str:
+    return (
+        EXPENSE_COMMAND_SYSTEM
+        + "A single message often describes MORE THAN ONE expense. Return one entry per "
+          "distinct spend.\n"
+          "Rules:\n"
+          "1. Base extraction on the input text and prior conversation. NEVER invent an amount.\n"
+          "2. Each separate amount is normally its own expense. Do not merge two amounts into "
+          "one entry, and do not split one amount across several entries.\n"
+          "3. Amounts are positive numbers. Assume Indian Rupees (₹) unless stated otherwise. "
+          "Omit any expense whose amount the message does not state — never emit 0 or null "
+          "as an amount.\n"
+          "4. Leave date null unless the message states one. Each expense may have its own date.\n"
+          "5. Choose each expense's category by asking what the money was FOR, and who received "
+          "it. Reason about the purpose; do not match keywords. Categories:\n"
+        + _category_guide(categories)
+        + f"\n6. Use exactly one of these names, spelled as shown: {', '.join(categories)}. "
+          f"When the purpose is genuinely unclear, use '{fallback}'. Categorise each expense "
+          "independently — one unclear item does not make the others unclear.\n"
+          "7. If the message describes no spending at all, return an empty list.\n"
+          "8. Return ONLY a JSON object of this exact shape:\n"
+          '{ "expenses": [ { "date": <YYYY-MM-DD or null>, "category": <string>, '
+          '"amount": <number> } ] }\n'
+          "No text outside the JSON object.\n"
+          "Example — \"paid 1200 for groceries and 8000 to my landlord\" yields two entries: "
+          "one Food of 1200 and one Housing of 8000."
+    )
+
+
+def build_expense_command_messages(
+    text: str,
+    default_date: str,
+    history: List[ChatMessage] | None = None,
+    categories: List[str] | None = None,
+    fallback_category: str = "Misc",
+) -> List[ChatMessage]:
+    cats = categories or ["Food", "Housing", "Travel", "Wellness", "Misc"]
+    messages: List[ChatMessage] = [
+        ChatMessage(role=Role.SYSTEM, content=_expense_system(cats, fallback_category))
+    ]
     if history:
         messages.extend(history)
     content = f"User input: {text}\nDefault date if unspecified: {default_date}"

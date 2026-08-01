@@ -204,7 +204,7 @@ with the LLM switched off.**
 |---|---|---|---|
 | `/insights` | LLM → `AiInsightList` | `rule_based_insights(context)` | `source: "rules"` |
 | `/chat` | LLM → `AiChatReply` | Top 3 rule insights, stitched into a sentence | `source: "fallback"` |
-| `/command` (expense) | LLM → `ExtractedExpensePayload` | `_rule_extract_expense` regex | `status` unchanged |
+| `/command` (expense) | LLM → `ExtractedExpenseList` | `_rule_extract_expenses` regex, clause-split | `status` unchanged |
 | `/command` (daily log) | LLM → `ExtractedDailyLogPayload` | `_rule_extract_daily_log` regex | `status` unchanged |
 
 The response always names its own provenance via `source`, so the UI and the

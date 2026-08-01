@@ -1150,29 +1150,125 @@ useEffect(() => {
 ### Command mode — human in the loop
 
 With `mode` set to `'expense'` or `'daily_log'`, free text like "spent 300 on
-groceries" goes to `aiApi.command(...)`. FastAPI returns a structured `payload`,
-which is attached to the bot's message as a **draft** rather than being saved:
+groceries" goes to `aiApi.command(...)`. FastAPI returns `payloads`, an array,
+because one sentence can describe several expenses ("ate for 500 and sent 344 to
+the house owner" is two). Each becomes a **draft** on the bot's message rather
+than being saved:
 
 ```jsx
+const extracted = res.payloads?.length
+  ? res.payloads
+  : (res.payload ? [res.payload] : []);   // payload = first, kept for compatibility
+
 setChat((prev) => [...prev, {
   from: 'bot',
   text: res.message,
-  draft: { id: Date.now(), target: res.target, payload: res.payload, status: 'pending' },
+  drafts: extracted.map((payload, n) => ({
+    id: `${Date.now()}-${n}`,
+    target: res.target,
+    payload,
+    status: 'pending',
+  })),
 }]);
 ```
 
-The user must confirm. Confirming writes through **Spring**, not the AI service:
+`id` is only there to be the React `key` (§3.2) — it is not a database id and the
+server never sees it.
+
+#### How a confirmation is made
+
+Each draft is confirmed or cancelled on its own, so every handler needs **two**
+indexes: which chat message, and which draft inside it. `setDraftStatus` is the
+single writer, and it patches one draft without disturbing its siblings:
 
 ```jsx
-if (draftItem.target === 'expense') {
-  await expenseApi.create(draftItem.payload);
-  // then patch that message's draft.status to 'confirmed'
-}
+const setDraftStatus = (msgIndex, draftIndex, status) => {
+  setChat((prev) => prev.map((item, idx) => (
+    idx === msgIndex && item.drafts
+      ? { ...item, drafts: item.drafts.map((d, dIdx) => (dIdx === draftIndex ? { ...d, status } : d)) }
+      : item
+  )));
+};
+```
+
+Note the nesting: a new array of messages, and inside the target message a new
+array of drafts. Mutating `item.drafts[dIdx].status = ...` would change nothing
+on screen (§3.4).
+
+Everything is driven by that one `status` field:
+
+| `status` | Badge | Buttons | Meaning |
+|---|---|---|---|
+| `pending` | Review | Confirm & Save / Cancel | Extracted, nothing sent to the backend yet |
+| `saving` | Saving… | hidden | The Spring request is in flight |
+| `confirmed` | Saved | hidden | Written to the database |
+| `cancelled` | Cancelled | hidden | Discarded in the browser only |
+
+The action buttons render only while `status === 'pending'`, and
+`handleConfirmDraft` opens with `if (draftItem.status !== 'pending') return;`.
+That guard is the **only** thing preventing a double-submit: confirming the same
+draft twice would create two expenses, because Spring has no idempotency key
+here. Keep it if you refactor.
+
+Confirming writes through **Spring**, not the AI service:
+
+```jsx
+const handleConfirmDraft = async (msgIndex, draftIndex, draftItem) => {
+  if (draftItem.status !== 'pending') return;
+  setDraftStatus(msgIndex, draftIndex, 'saving');
+  try {
+    if (draftItem.target === 'expense') {
+      await expenseApi.create(draftItem.payload);      // POST /api/expenses, JWT attached
+      setDraftStatus(msgIndex, draftIndex, 'confirmed');
+      setChat((prev) => [...prev, { from: 'bot', text: '✅ Expense created and saved successfully!' }]);
+    } else if (draftItem.target === 'daily_log') {
+      await dailyLogApi.merge(draftItem.payload);      // POST /api/daily-logs/merge
+      ...
+    }
+  } catch (err) {
+    setDraftStatus(msgIndex, draftIndex, 'pending');   // back to retryable
+    setChat((prev) => [...prev, { from: 'bot', text: `❌ Could not save: ${err.message}` }]);
+  }
+};
 ```
 
 So the AI never writes to the database. It proposes; the user approves; the
-normal validated Spring endpoint performs the write. Keep that property if you
-extend this feature.
+normal validated Spring endpoint performs the write, with the same validation and
+ownership rules as the Expenses page. Keep that property if you extend this
+feature.
+
+Four behaviours worth knowing before you touch this:
+
+- **A failed save returns the draft to `pending`**, not to an error state, so the
+  user can simply press the button again. The failure is reported as a separate
+  bot message.
+- **Cancel sends no request.** It is a local state change; there is nothing to
+  undo server-side.
+- **Confirmed and cancelled drafts stay on screen** as a record, with their
+  buttons gone. They are not removed from the conversation.
+- **Each successful save appends its own ✅ message**, so confirming two drafts
+  produces two confirmations in the chat.
+
+`handleConfirmAllDrafts` is offered only when a message has more than one draft
+*and* more than one of them is still pending:
+
+```jsx
+{c.drafts?.length > 1 && c.drafts.filter((d) => d.status === 'pending').length > 1 && (
+  <button onClick={() => handleConfirmAllDrafts(i, c.drafts)}>
+    Confirm all {c.drafts.filter((d) => d.status === 'pending').length}
+  </button>
+)}
+```
+
+It awaits each save in turn rather than using `Promise.all`, so a failure
+part-way leaves the remainder pending and retryable instead of half-applied and
+ambiguous.
+
+Finally: **drafts live only in `chat` state.** They are never persisted, so a
+refresh loses any unconfirmed draft and the user has to retype the sentence.
+Confirmed ones are safe — they are real rows in MySQL by then. A `daily_log`
+command always yields exactly one draft, because a daily log is merged per date
+rather than appended.
 
 ### Insights (`src/pages/DashboardPage.jsx`)
 
@@ -1377,6 +1473,11 @@ Ordered roughly by how often they bite.
     slice has no `error` field. Don't read it as documentation.
 20. **Form inputs are always strings.** `parseFloat`/`Number` before arithmetic,
     or `"5" + 1` gives `"51"`.
+21. **AI drafts are ephemeral and not idempotent.** They live only in `chat`
+    state, so a refresh discards unconfirmed ones. And the
+    `if (draftItem.status !== 'pending') return;` guard in `handleConfirmDraft`
+    is all that stops a double-click creating two expenses — Spring has no
+    idempotency key on `POST /api/expenses`. See §12.
 
 ---
 

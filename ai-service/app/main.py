@@ -40,6 +40,7 @@ from .schemas import (
     CommandTarget,
     ContextMode,
     ExtractedDailyLogPayload,
+    ExtractedExpenseList,
     ExtractedExpensePayload,
     HealthResponse,
     InsightsRequest,
@@ -225,34 +226,72 @@ async def vectors_delete(user_key: str) -> VectorDeleteResponse:
 # ---------------------------------------------------------------------------
 # Command Mode (Expense & Daily Log Extraction)
 # ---------------------------------------------------------------------------
-def _rule_extract_expense(text: str, default_date: str) -> ExtractedExpensePayload:
-    amount = None
-    m_amount = re.search(r"(?:₹|rs\.?|rupees?|\$)?\s*(\d+(?:\.\d{1,2})?)", text, re.IGNORECASE)
-    if m_amount:
-        try:
-            val = float(m_amount.group(1))
-            if val > 0:
-                amount = val
-        except ValueError:
-            pass
+# Keyword table for the no-LLM path only. The LLM path reasons from the category
+# descriptions in prompts.py instead, so new phrasings do not need an entry here.
+_RULE_CATEGORY_KEYWORDS = {
+    "food": "Food", "ate": "Food", "eat": "Food", "lunch": "Food", "dinner": "Food",
+    "breakfast": "Food", "meal": "Food", "groceries": "Food", "coffee": "Food",
+    "house": "Housing", "housing": "Housing", "rent": "Housing", "landlord": "Housing",
+    "utilities": "Housing", "bills": "Housing", "electric": "Housing", "water": "Housing",
+    "travel": "Travel", "transport": "Travel", "cab": "Travel", "bus": "Travel",
+    "train": "Travel", "flight": "Travel", "taxi": "Travel", "gas": "Travel", "fuel": "Travel",
+    "wellness": "Wellness", "health": "Wellness", "doctor": "Wellness",
+    "medicine": "Wellness", "pharmacy": "Wellness", "gym": "Wellness",
+}
 
-    category = None
+_AMOUNT_RE = re.compile(r"(?:₹|rs\.?|rupees?|\$)?\s*(\d+(?:\.\d{1,2})?)", re.IGNORECASE)
+# Splits "ate 500 and sent 344 to the house owner" into independent clauses.
+_CLAUSE_SPLIT_RE = re.compile(r"\s*(?:,|;|&|\band\b|\balso\b|\bplus\b|\bthen\b)\s*", re.IGNORECASE)
+
+
+def _first_amount(text: str) -> float | None:
+    m = _AMOUNT_RE.search(text)
+    if not m:
+        return None
+    try:
+        val = float(m.group(1))
+        return val if val > 0 else None
+    except ValueError:
+        return None
+
+
+def _keyword_category(text: str, allowed: list[str]) -> str | None:
     lower = text.lower()
-    cat_map = {
-        "food": "Food", "lunch": "Food", "dinner": "Food", "breakfast": "Food", "meal": "Food", "groceries": "Food", "coffee": "Food",
-        "house": "Housing", "housing": "Housing", "rent": "Housing", "utilities": "Housing", "bills": "Housing", "electric": "Housing", "water": "Housing",
-        "travel": "Travel", "transport": "Travel", "cab": "Travel", "bus": "Travel", "train": "Travel", "flight": "Travel", "taxi": "Travel", "gas": "Travel", "fuel": "Travel",
-        "wellness": "Wellness", "health": "Wellness", "doctor": "Wellness", "medicine": "Wellness", "pharmacy": "Wellness", "gym": "Wellness",
-    }
-    for k, v in cat_map.items():
-        if k in lower:
-            category = v
-            break
+    allowed_lower = {c.lower(): c for c in allowed}
+    for keyword, category in _RULE_CATEGORY_KEYWORDS.items():
+        if keyword in lower and category.lower() in allowed_lower:
+            return allowed_lower[category.lower()]
+    return None
 
-    if category is None and amount is not None:
-        category = "Misc"
 
-    return ExtractedExpensePayload(date=default_date, category=category, amount=amount)
+def _rule_extract_expenses(text: str, default_date: str, allowed: list[str]) -> list[ExtractedExpensePayload]:
+    """Deterministic fallback for when no model is configured or the call fails.
+
+    Splits the message into clauses so a multi-expense sentence still yields
+    multiple drafts, matching the LLM path's cardinality.
+    """
+    clauses = [c for c in _CLAUSE_SPLIT_RE.split(text) if c and c.strip()]
+    found: list[ExtractedExpensePayload] = []
+    for clause in clauses:
+        amount = _first_amount(clause)
+        if amount is None:
+            continue
+        found.append(ExtractedExpensePayload(
+            date=default_date,
+            category=_keyword_category(clause, allowed),
+            amount=amount,
+        ))
+
+    if found:
+        return found
+
+    # No clause carried an amount; try the message as a whole.
+    amount = _first_amount(text)
+    return [ExtractedExpensePayload(
+        date=default_date,
+        category=_keyword_category(text, allowed),
+        amount=amount,
+    )]
 
 
 def _rule_extract_daily_log(text: str, default_date: str) -> ExtractedDailyLogPayload:
@@ -418,62 +457,95 @@ async def command(req: CommandRequest) -> CommandResponse:
         )
 
     if target == CommandTarget.EXPENSE:
-        extracted: ExtractedExpensePayload | None = None
+        allowed = settings.expense_category_list
+        fallback_category = settings.fallback_expense_category
+
+        # One message can describe several expenses, so extraction is
+        # list-shaped. A single-object schema would force the model to keep one
+        # spend and silently discard the rest.
+        items: list[ExtractedExpensePayload] = []
         if model:
             try:
-                messages = build_expense_command_messages(req.text, req.date, req.history)
-                extracted = await _client().structured(messages, ExtractedExpensePayload, model=model)
+                messages = build_expense_command_messages(
+                    req.text, req.date, req.history, allowed, fallback_category
+                )
+                extracted = await _client().structured(messages, ExtractedExpenseList, model=model)
+                items = list(extracted.expenses)
             except LlmError as exc:
                 logger.warning("Expense extraction LLM call failed, using rule fallback: %s", exc)
 
-        if extracted is None or (extracted.amount is None and extracted.category is None):
-            extracted = _rule_extract_expense(req.text, req.date)
+        if not any(i.amount is not None or i.category is not None for i in items):
+            items = _rule_extract_expenses(req.text, req.date, allowed)
 
-        amount = extracted.amount if (extracted and extracted.amount and extracted.amount > 0) else None
-        category = extracted.category.strip() if (extracted and extracted.category and extracted.category.strip()) else None
+        drafts: list[dict] = []
+        seen: set[tuple] = set()
+        for item in items:
+            amount = item.amount if (item.amount and item.amount > 0) else None
+            if amount is None:
+                continue
 
-        # Check conversation history for amount if not found in current turn
-        if amount is None and req.history:
+            category = (item.category or "").strip()
+            if category:
+                matched = next((c for c in allowed if c.lower() == category.lower()), None)
+                if matched is None:
+                    # Spring would reject this value, so map it rather than 400 later.
+                    logger.info("Model returned unknown category %r; using %r", category, fallback_category)
+                category = matched or fallback_category
+            else:
+                category = fallback_category
+
+            date = (item.date or "").strip() or req.date
+
+            key = (date, category, amount)
+            if key in seen:
+                continue  # guard against the model repeating an entry
+            seen.add(key)
+            drafts.append({"date": date, "category": category, "amount": amount})
+
+        # Two-turn flow: "spent on food" then "500". Only safe when a single
+        # expense is on the table, otherwise one amount would be stamped on all.
+        if not drafts and len(items) <= 1 and req.history:
             for turn in reversed(req.history):
-                m_hist = re.search(r"(?:₹|rs\.?|rupees?|\$)?\s*(\d+(?:\.\d{1,2})?)", turn.content, re.IGNORECASE)
-                if m_hist:
-                    try:
-                        val = float(m_hist.group(1))
-                        if val > 0:
-                            amount = val
-                            break
-                    except ValueError:
-                        pass
+                recovered = _first_amount(turn.content)
+                if recovered is not None:
+                    lone = items[0] if items else None
+                    category = (lone.category or "").strip() if lone else ""
+                    matched = next((c for c in allowed if c.lower() == category.lower()), None)
+                    drafts.append({
+                        "date": req.date,
+                        "category": matched or fallback_category,
+                        "amount": recovered,
+                    })
+                    break
 
-        if category:
-            valid_cats = {"Food", "Housing", "Travel", "Wellness", "Misc"}
-            matched = next((c for c in valid_cats if c.lower() == category.lower()), None)
-            category = matched if matched else "Misc"
-        elif amount is not None:
-            # Default category to "Misc" if amount is present but category is unspecified or forgotten
-            category = "Misc"
-
-        date = (extracted.date.strip() if (extracted and extracted.date and extracted.date.strip()) else None) or req.date
-
-        if amount is None:
-            msg = "Please specify the missing expense amount (e.g. ₹500)."
+        if not drafts:
             return CommandResponse(
                 target=CommandTarget.EXPENSE,
                 status=CommandStatus.CLARIFICATION_NEEDED,
                 payload=None,
-                message=msg,
+                payloads=[],
+                message="Please specify the missing expense amount (e.g. ₹500).",
             )
 
-        payload = {
-            "date": date,
-            "category": category,
-            "amount": amount,
-        }
+        if len(drafts) == 1:
+            d = drafts[0]
+            message = (
+                f"I've prepared an expense draft of ₹{d['amount']:.2f} for "
+                f"'{d['category']}' on {d['date']}. Please review and confirm below."
+            )
+        else:
+            summary = ", ".join(f"₹{d['amount']:.2f} for '{d['category']}'" for d in drafts)
+            message = (
+                f"I found {len(drafts)} expenses in that message: {summary}. "
+                "Review and confirm each one below."
+            )
+
         return CommandResponse(
             target=CommandTarget.EXPENSE,
             status=CommandStatus.SUCCESS,
-            payload=payload,
-            message=f"I've prepared an expense draft of ₹{amount:.2f} for '{category}' on {date}. Please review and confirm below.",
+            payload=drafts[0],
+            payloads=drafts,
+            message=message,
         )
 
     if target == CommandTarget.DAILY_LOG:
@@ -535,10 +607,13 @@ async def command(req: CommandRequest) -> CommandResponse:
         if extracted_log.stepTarget and any(w in req.text.lower() for w in ["meter", " m ", "km", "mile"]):
             note = f" (estimated ~{extracted_log.stepTarget} steps based on distance)"
 
+        # Always exactly one: a daily log is merged per date, not appended, so
+        # several mentions of the same day collapse into a single draft.
         return CommandResponse(
             target=CommandTarget.DAILY_LOG,
             status=CommandStatus.SUCCESS,
             payload=payload,
+            payloads=[payload],
             message=f"I've prepared a daily log draft for {date}{note}. Please review and confirm below.",
         )
 

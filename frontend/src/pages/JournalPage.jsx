@@ -192,18 +192,24 @@ export default function JournalPage() {
           history,
         });
 
-        if (res.status === 'success' && res.payload) {
+        // One message can describe several expenses, so the service returns
+        // `payloads`. `payload` is the first of them, kept for compatibility.
+        const extracted = res.payloads?.length
+          ? res.payloads
+          : (res.payload ? [res.payload] : []);
+
+        if (res.status === 'success' && extracted.length) {
           setChat((prev) => [
             ...prev,
             {
               from: 'bot',
               text: res.message,
-              draft: {
-                id: Date.now(),
+              drafts: extracted.map((payload, n) => ({
+                id: `${Date.now()}-${n}`,
                 target: res.target,
-                payload: res.payload,
+                payload,
                 status: 'pending',
-              },
+              })),
             },
           ]);
         } else {
@@ -220,57 +226,53 @@ export default function JournalPage() {
     }
   };
 
-  const handleConfirmDraft = async (msgIndex, draftItem) => {
+  /* Patch one draft inside one bot message, leaving its siblings untouched. */
+  const setDraftStatus = (msgIndex, draftIndex, status) => {
     setChat((prev) =>
-      prev.map((item, idx) =>
-        idx === msgIndex && item.draft
-          ? { ...item, draft: { ...item.draft, status: 'saving' } }
+      prev.map((item, idx) => (
+        idx === msgIndex && item.drafts
+          ? {
+            ...item,
+            drafts: item.drafts.map((d, dIdx) => (dIdx === draftIndex ? { ...d, status } : d)),
+          }
           : item
-      )
+      ))
     );
+  };
+
+  const handleConfirmDraft = async (msgIndex, draftIndex, draftItem) => {
+    if (draftItem.status !== 'pending') return;
+    setDraftStatus(msgIndex, draftIndex, 'saving');
 
     try {
       if (draftItem.target === 'expense') {
         await expenseApi.create(draftItem.payload);
-        setChat((prev) => [
-          ...prev.map((item, idx) =>
-            idx === msgIndex && item.draft
-              ? { ...item, draft: { ...item.draft, status: 'confirmed' } }
-              : item
-          ),
-          { from: 'bot', text: '✅ Expense created and saved successfully!' },
-        ]);
+        setDraftStatus(msgIndex, draftIndex, 'confirmed');
+        setChat((prev) => [...prev, { from: 'bot', text: '✅ Expense created and saved successfully!' }]);
       } else if (draftItem.target === 'daily_log') {
         await dailyLogApi.merge(draftItem.payload);
-        setChat((prev) => [
-          ...prev.map((item, idx) =>
-            idx === msgIndex && item.draft
-              ? { ...item, draft: { ...item.draft, status: 'confirmed' } }
-              : item
-          ),
-          { from: 'bot', text: '✅ Daily Log updated successfully!' },
-        ]);
+        setDraftStatus(msgIndex, draftIndex, 'confirmed');
+        setChat((prev) => [...prev, { from: 'bot', text: '✅ Daily Log updated successfully!' }]);
       }
     } catch (err) {
-      setChat((prev) => [
-        ...prev.map((item, idx) =>
-          idx === msgIndex && item.draft
-            ? { ...item, draft: { ...item.draft, status: 'pending' } }
-            : item
-        ),
-        { from: 'bot', text: `❌ Could not save: ${err.message || 'Server error'}` },
-      ]);
+      // Back to pending so the user can retry this one draft.
+      setDraftStatus(msgIndex, draftIndex, 'pending');
+      setChat((prev) => [...prev, { from: 'bot', text: `❌ Could not save: ${err.message || 'Server error'}` }]);
     }
   };
 
-  const handleCancelDraft = (msgIndex) => {
-    setChat((prev) =>
-      prev.map((item, idx) =>
-        idx === msgIndex && item.draft
-          ? { ...item, draft: { ...item.draft, status: 'cancelled' } }
-          : item
-      )
-    );
+  const handleCancelDraft = (msgIndex, draftIndex) => {
+    setDraftStatus(msgIndex, draftIndex, 'cancelled');
+  };
+
+  /* Save every still-pending draft in one message, sequentially so a failure
+     part-way through leaves the rest retryable rather than half-applied. */
+  const handleConfirmAllDrafts = async (msgIndex, drafts) => {
+    for (let dIdx = 0; dIdx < drafts.length; dIdx += 1) {
+      if (drafts[dIdx].status === 'pending') {
+        await handleConfirmDraft(msgIndex, dIdx, drafts[dIdx]);
+      }
+    }
   };
 
   return (
@@ -365,22 +367,23 @@ export default function JournalPage() {
                           c.text
                         )}
                       </div>
-                      {c.draft && (
-                        <div className="ai-draft-card">
+                      {c.drafts?.map((d, dIdx) => (
+                        <div className="ai-draft-card" key={d.id}>
                           <div className="ai-draft-card__header">
                             <span className="ai-draft-card__title">
-                              {c.draft.target === 'expense' ? 'Draft Expense' : 'Draft Daily Log'}
+                              {d.target === 'expense' ? 'Draft Expense' : 'Draft Daily Log'}
+                              {c.drafts.length > 1 && ` ${dIdx + 1} of ${c.drafts.length}`}
                             </span>
-                            <span className={`ai-draft-card__badge ai-draft-card__badge--${c.draft.status}`}>
-                              {c.draft.status === 'pending' && 'Review'}
-                              {c.draft.status === 'saving' && 'Saving…'}
-                              {c.draft.status === 'confirmed' && 'Saved'}
-                              {c.draft.status === 'cancelled' && 'Cancelled'}
+                            <span className={`ai-draft-card__badge ai-draft-card__badge--${d.status}`}>
+                              {d.status === 'pending' && 'Review'}
+                              {d.status === 'saving' && 'Saving…'}
+                              {d.status === 'confirmed' && 'Saved'}
+                              {d.status === 'cancelled' && 'Cancelled'}
                             </span>
                           </div>
 
                           <div className="ai-draft-card__fields">
-                            {Object.entries(c.draft.payload).map(([key, val]) => {
+                            {Object.entries(d.payload).map(([key, val]) => {
                               if (val === null || val === undefined) return null;
                               let displayVal = val;
                               if (typeof val === 'object') displayVal = JSON.stringify(val);
@@ -397,24 +400,38 @@ export default function JournalPage() {
                             })}
                           </div>
 
-                          {c.draft.status === 'pending' && (
+                          {d.status === 'pending' && (
                             <div className="ai-draft-card__actions">
                               <button
                                 type="button"
                                 className="btn btn--primary btn--sm"
-                                onClick={() => handleConfirmDraft(i, c.draft)}
+                                onClick={() => handleConfirmDraft(i, dIdx, d)}
                               >
                                 Confirm &amp; Save
                               </button>
                               <button
                                 type="button"
                                 className="btn btn--secondary btn--sm"
-                                onClick={() => handleCancelDraft(i)}
+                                onClick={() => handleCancelDraft(i, dIdx)}
                               >
                                 Cancel
                               </button>
                             </div>
                           )}
+                        </div>
+                      ))}
+
+                      {/* Only worth offering when there is more than one thing to save. */}
+                      {c.drafts?.length > 1
+                        && c.drafts.filter((d) => d.status === 'pending').length > 1 && (
+                        <div className="ai-draft-card__actions">
+                          <button
+                            type="button"
+                            className="btn btn--primary btn--sm"
+                            onClick={() => handleConfirmAllDrafts(i, c.drafts)}
+                          >
+                            Confirm all {c.drafts.filter((d) => d.status === 'pending').length}
+                          </button>
                         </div>
                       )}
                     </div>

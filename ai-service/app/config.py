@@ -71,6 +71,14 @@ class Settings(BaseSettings):
     user_key_salt: str = "lifetrack-local"  # salts the on-disk user folder hash
     max_snippet_chars: int = 500
 
+    # --- Domain vocabulary ---------------------------------------------------
+    # Spring is the source of truth (app.reference.expense-categories, served by
+    # GET /api/reference). This service needs the same list to build the
+    # extraction prompt and to reject categories the backend would refuse, so
+    # keep the two aligned: set EXPENSE_CATEGORIES here if you override it there.
+    # Comma-separated. The last entry is used as the "unclear" bucket.
+    expense_categories: str = "Food,Housing,Travel,Wellness,Misc"
+
     # CORS origins for the React frontend (comma-separated).
     cors_allowed_origins: str = "http://localhost:5173,http://localhost:3000"
 
@@ -85,6 +93,21 @@ class Settings(BaseSettings):
     @property
     def provider(self) -> str:
         return (self.ai_provider or "lmstudio").strip().lower()
+
+    @property
+    def expense_category_list(self) -> List[str]:
+        """Configured expense categories, order preserved, blanks dropped."""
+        items = [c.strip() for c in (self.expense_categories or "").split(",")]
+        return [c for c in items if c] or ["Misc"]
+
+    @property
+    def fallback_expense_category(self) -> str:
+        """Bucket used when a spend's category cannot be determined."""
+        cats = self.expense_category_list
+        for c in cats:
+            if c.lower() == "misc":
+                return c
+        return cats[-1]
 
     @property
     def base_url(self) -> str:

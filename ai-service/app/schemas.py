@@ -265,11 +265,41 @@ class CommandRequest(BaseModel):
 
 
 class ExtractedExpensePayload(BaseModel):
+    """One single expense. A message may describe several — see
+    :class:`ExtractedExpenseList`."""
+
     model_config = ConfigDict(extra="forbid")
 
     date: Optional[str] = Field(default=None, description="Date in YYYY-MM-DD format")
-    category: Optional[str] = Field(default=None, description="Category name e.g. Food, Transport, Utilities, etc.")
-    amount: Optional[float] = Field(default=None, gt=0, description="Expense amount (strictly positive)")
+    # The allowed values are injected into the prompt from
+    # Settings.expense_category_list, because they are deployment-configurable
+    # and must match Spring's app.reference.expense-categories. Do not restate
+    # a literal list here: this description is sent to the model as part of the
+    # json_schema, and a stale copy contradicts the system prompt.
+    category: Optional[str] = Field(
+        default=None,
+        description="One of the expense categories listed in the system prompt",
+    )
+    # Deliberately NOT constrained with gt=0 here. Validation is per-list, so one
+    # malformed sibling would fail the whole ExtractedExpenseList and discard the
+    # valid expenses next to it — observed with a model emitting amount: 0 for an
+    # expense the user never priced. The /command handler drops non-positive
+    # amounts instead, which loses only the bad entry.
+    amount: Optional[float] = Field(default=None, description="Expense amount; must be > 0 to be usable")
+
+
+class ExtractedExpenseList(BaseModel):
+    """Every expense found in one message.
+
+    One utterance often contains more than one spend ("ate for 500 and sent 344
+    to the house owner" is two). Extraction is therefore list-shaped: a
+    single-object schema would force the model to discard all but one, which is
+    exactly the bug this replaces.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    expenses: List[ExtractedExpensePayload] = Field(default_factory=list, max_length=10)
 
 
 class ExtractedMeal(BaseModel):
@@ -301,6 +331,11 @@ class ExtractedDailyLogPayload(BaseModel):
 
 class CommandResponse(BaseModel):
     target: CommandTarget
-    status: CommandStatus
+    # First draft, kept so older callers keep working. Prefer `payloads`.
     payload: Optional[Dict] = None
+    # Every draft extracted from the message, in the order they were mentioned.
+    # Expense extraction can yield more than one; daily_log always yields one,
+    # because a daily log is merged per date rather than appended.
+    payloads: List[Dict] = Field(default_factory=list)
+    status: CommandStatus
     message: str

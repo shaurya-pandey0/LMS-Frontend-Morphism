@@ -45,6 +45,9 @@ Added a 3-mode control (**Chat**, **+ Expense**, **+ Daily Log**) beside the Jou
   - `CommandStatus`: `success`, `clarification_needed`, `error`
   - `CommandRequest`: `target`, `text`, `date` (PC-local), optional `model`
   - `ExtractedExpensePayload`: `date`, `category`, `amount`
+    - Superseded: extraction now returns `ExtractedExpenseList`
+      (`{ expenses: [...] }`) so one message can yield several expenses.
+      `CommandResponse` gained `payloads`; `payload` is the first entry.
   - `ExtractedDailyLogPayload`: `date`, `sleepHours`, `stepTarget`, `waterIntake`, ratings (1–5), `dayType`, habits, `meals`, moods
   - `CommandResponse`: `target`, `status`, `payload`, `message`
 - Structured Prompts in [`prompts.py`](file:///c:/Users/PC/Desktop/V2/New%20folder/lms-frontend-backend-springboot/ai-service/app/prompts.py):
