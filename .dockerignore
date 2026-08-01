@@ -1,0 +1,14 @@
+# Root build context excludes (used when building with the repo root as context)
+.git/
+.github/
+.kiro/
+**/node_modules/
+**/target/
+**/dist/
+**/.venv/
+**/__pycache__/
+ai-service/data/
+ai-service/.env
+**/*.log
+docs/
+UI/

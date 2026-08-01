@@ -1,0 +1,145 @@
+# =============================================================================
+#  HTTPS server block for LifeTrack.
+#
+#  1. Put fullchain.pem + privkey.pem in deploy/nginx/certs/
+#     Let's Encrypt (run on the VM, port 80 must be reachable):
+#       sudo apt-get install -y certbot
+#       sudo certbot certonly --standalone -d your.domain.com
+#       sudo cp /etc/letsencrypt/live/your.domain.com/fullchain.pem deploy/nginx/certs/
+#       sudo cp /etc/letsencrypt/live/your.domain.com/privkey.pem   deploy/nginx/certs/
+#       sudo chown $USER:$USER deploy/nginx/certs/*.pem
+#  2. cp deploy/nginx/tls.conf.example deploy/nginx/conf.d/tls.conf
+#  3. Replace your.domain.com below.
+#
+#  Note: files in conf.d/extra are included BEFORE the image's own port-80
+#  block, so the HTTP server at the bottom of this file becomes the default
+#  server for :80. Requests that arrive by raw IP therefore get redirected to
+#  https://IP/... and will fail certificate validation — that is expected once
+#  you are serving a real domain. /healthz stays plain HTTP for the healthcheck.
+#  4. Uncomment the 443 port mapping for the `web` service in docker-compose.yml
+#  5. docker compose up -d web   (config is mounted, no rebuild needed)
+#
+#  Then set in .env and rebuild the frontend so absolute links use https:
+#     APP_CORS_ALLOWED_ORIGINS=https://your.domain.com
+#     CORS_ALLOWED_ORIGINS=https://your.domain.com
+#     GRAFANA_ROOT_URL=https://your.domain.com:3000
+# =============================================================================
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name your.domain.com;
+
+    ssl_certificate     /etc/nginx/certs/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_stapling        on;
+    ssl_stapling_verify on;
+
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    resolver_timeout 5s;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    client_max_body_size 12m;
+    server_tokens off;
+
+    include /etc/nginx/snippets/security-headers.conf;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/javascript application/javascript
+               application/json application/xml image/svg+xml font/woff2;
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    location /api/ {
+        limit_req zone=api_zone burst=120 nodelay;
+        set $backend_upstream "http://backend:8080";
+        proxy_pass $backend_upstream$request_uri;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection        "";
+        proxy_connect_timeout 5s;
+        proxy_read_timeout    60s;
+    }
+
+    location /ai/ {
+        limit_req zone=ai_zone burst=10 nodelay;
+        # Files in conf.d/extra are mounted, not templated, so the upstream is
+        # literal here. SPLIT DEPLOYMENT: replace this with the AI VM's internal
+        # address (the AI_UPSTREAM value from .env) and uncomment the token
+        # header below with your AI_SHARED_TOKEN.
+        set $ai_upstream "http://ai-service:8100";
+        rewrite ^/ai/(.*)$ /$1 break;
+        proxy_pass $ai_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection        "";
+        # proxy_set_header X-Internal-Token "YOUR_AI_SHARED_TOKEN";
+        proxy_connect_timeout 5s;
+        proxy_read_timeout    180s;
+        proxy_buffering       off;
+    }
+
+    location /actuator/ {
+        deny all;
+        return 403;
+    }
+
+    location /assets/ {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+        try_files $uri =404;
+    }
+
+    location / {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        add_header Cache-Control "no-cache, must-revalidate";
+        try_files $uri $uri/ /index.html;
+    }
+}
+
+# Redirect plain HTTP to HTTPS. Enabling this replaces the image's port-80
+# server block for this server_name; keep /healthz and the ACME path open.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name your.domain.com;
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}

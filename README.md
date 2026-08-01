@@ -428,8 +428,32 @@ It does not create users or credentials. Confirm those IDs before running it.
 - `ddl-auto: update` is not a production migration strategy
 - Vector endpoints exist but are not integrated into the normal React flow
 
+## Deployment
+
+The repository ships a containerised production stack: nginx serves the React
+bundle and reverse-proxies `/api` to Spring Boot and `/ai` to FastAPI, with
+MySQL and optional Prometheus/Grafana alongside. On a fresh Debian VM:
+
+```bash
+sudo bash deploy/scripts/bootstrap-vm.sh   # installs Docker
+cp .env.example .env && nano .env          # secrets
+bash deploy/scripts/deploy.sh              # build, start, verify
+```
+
+Two topologies are supported, sharing the same images and scripts:
+
+- **One VM** — `docker-compose.yml`. See [DEPLOYMENT.md](DEPLOYMENT.md).
+- **Two VMs** — nginx + Spring Boot + MySQL on one, the AI service on another
+  with no public ingress. See [DEPLOYMENT-SPLIT.md](DEPLOYMENT-SPLIT.md).
+
+Both guides cover firewall rules, HTTPS, backups and the security caveats that
+apply before a public deployment.
+
 ## Documentation
 
+- [Deployment guide](DEPLOYMENT.md) — single-VM containerised stack, operations
+- [Split deployment guide](DEPLOYMENT-SPLIT.md) — app and AI service on separate VMs
+- [Deployment file index](DEPLOYMENT-FILES.md) — what every deployment file is for
 - [Project story](docs/PROJECT-STORY.md) — how and why the system evolved
 - [Integration seams](Integration%20Seams.md) — service-to-service contracts, the
   LLM validation boundary and the known gaps at each seam

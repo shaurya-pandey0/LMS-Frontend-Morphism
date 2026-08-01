@@ -1,0 +1,12 @@
+target/
+.mvn/wrapper/maven-wrapper.jar
+*.iml
+.idea/
+.settings/
+.classpath
+.project
+*.log
+seed-data.js
+node_modules/
+Dockerfile
+.dockerignore

@@ -1,0 +1,40 @@
+# =============================================================================
+#  systemd unit so the stack comes back after a VM reboot even if the docker
+#  restart policies are not enough (e.g. after `docker compose down`).
+#
+#  Install:
+#     sudo cp deploy/lifetrack.service /etc/systemd/system/lifetrack.service
+#     sudo sed -i "s|/opt/lifetrack|$(pwd)|" /etc/systemd/system/lifetrack.service
+#     sudo systemctl daemon-reload
+#     sudo systemctl enable --now lifetrack
+#
+#  Manage:
+#     sudo systemctl status lifetrack
+#     sudo systemctl restart lifetrack
+#     journalctl -u lifetrack -f
+# =============================================================================
+[Unit]
+Description=LifeTrack application stack (docker compose)
+Documentation=file:///opt/lifetrack/DEPLOYMENT.md
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# docker compose reads .env from this directory itself, so no EnvironmentFile
+# is needed here (and systemd's parser is stricter than compose's).
+WorkingDirectory=/opt/lifetrack
+
+ExecStart=/usr/bin/docker compose up -d --remove-orphans
+ExecStop=/usr/bin/docker compose stop
+ExecReload=/usr/bin/docker compose up -d --remove-orphans
+
+TimeoutStartSec=600
+TimeoutStopSec=120
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

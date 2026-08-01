@@ -1,0 +1,11 @@
+Scripts placed in this directory (*.sql, *.sh, *.sql.gz) run once, in
+alphabetical order, the first time the MySQL data volume is initialised.
+
+They run BEFORE the backend has created any tables (Hibernate ddl-auto), so
+they can only be used for database/user/charset level setup — not for seeding
+application rows.
+
+To seed demo data instead, start the stack, let the backend create the schema,
+register the users, then run:
+
+    ./deploy/scripts/seed-demo.sh

@@ -1,0 +1,105 @@
+# =============================================================================
+#  LifeTrack — SPLIT DEPLOYMENT, part 2 of 2: the AI VM.
+#
+#    ai-edge     nginx gate: shared-secret check + rate limit  (host :8100)
+#    ai-service  FastAPI + uvicorn                             (internal :8100)
+#
+#  ai-service itself has no authentication, so it is never published. The only
+#  way in is ai-edge, which requires the X-Internal-Token header that the app
+#  VM's nginx injects. Combine that with a firewall rule that allows :8100 only
+#  from the app VM's network tag.
+#
+#  Usage on the AI VM:
+#    cp .env.ai.example .env && edit it
+#    bash deploy/scripts/deploy.sh --role ai
+#
+#  See DEPLOYMENT-SPLIT.md.
+# =============================================================================
+
+name: lifetrack
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  # ------------------------------------------------------------- ai-service
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    image: lifetrack/ai-service:${IMAGE_TAG:-latest}
+    container_name: lifetrack-ai
+    restart: unless-stopped
+    environment:
+      AI_PORT: "8100"
+      AI_WORKERS: ${AI_WORKERS:-4}
+      AI_PROVIDER: ${AI_PROVIDER:-openai}
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_API_KEY: ${AI_API_KEY:?set AI_API_KEY in .env}
+      AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
+      AI_TEMPERATURE: ${AI_TEMPERATURE:-0.4}
+      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-60}
+      AI_MAX_TOKENS: ${AI_MAX_TOKENS:-800}
+      AI_JSON_MODE: ${AI_JSON_MODE:-auto}
+      AI_RETRIEVAL_MODE: ${AI_RETRIEVAL_MODE:-full}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      VECTOR_DATA_DIR: /app/data/users
+      VECTOR_TOP_K: ${VECTOR_TOP_K:-5}
+      VECTOR_CACHE_USERS: ${VECTOR_CACHE_USERS:-16}
+      VECTOR_BIT_WIDTH: ${VECTOR_BIT_WIDTH:-4}
+      VECTOR_BACKEND: ${VECTOR_BACKEND:-auto}
+      # Must match the value used on the app VM if vector data is ever migrated
+      # between deployments: it salts the on-disk per-user folder hash.
+      USER_KEY_SALT: ${USER_KEY_SALT:?set USER_KEY_SALT in .env}
+      MAX_SNIPPET_CHARS: ${MAX_SNIPPET_CHARS:-500}
+      # Requests arrive server-to-server from the app VM's nginx, never from a
+      # browser, so CORS is irrelevant here. Left restrictive on purpose.
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - ai_vectors:/app/data/users
+    # Deliberately NOT published to the host. ai-edge is the only entrance.
+    expose:
+      - "8100"
+    networks: [lifetrack]
+    logging: *default-logging
+
+  # ----------------------------------------------------------------- ai-edge
+  ai-edge:
+    image: nginx:1.27-alpine
+    container_name: lifetrack-ai-edge
+    restart: unless-stopped
+    depends_on:
+      - ai-service
+    environment:
+      AI_UPSTREAM: http://ai-service:8100
+      # Shared secret. Must match AI_PROXY_TOKEN (AI_SHARED_TOKEN) on the app VM.
+      AI_SHARED_TOKEN: ${AI_SHARED_TOKEN:?set AI_SHARED_TOKEN in .env}
+      NGINX_ENVSUBST_FILTER: "^(AI_UPSTREAM|AI_SHARED_TOKEN)$$"
+      TZ: ${TZ:-UTC}
+    volumes:
+      - ./deploy/ai-edge/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    ports:
+      # Bind to the VPC-internal address so the service is not on the external
+      # NIC at all. Get it with:
+      #   curl -s -H "Metadata-Flavor: Google" \
+      #     http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip
+      - "${AI_BIND_IP:-0.0.0.0}:${AI_PUBLISH_PORT:-8100}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks: [lifetrack]
+    logging: *default-logging
+
+networks:
+  lifetrack:
+    driver: bridge
+
+volumes:
+  ai_vectors:

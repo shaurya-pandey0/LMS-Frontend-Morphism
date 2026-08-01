@@ -1,0 +1,3 @@
+# TLS certificate + key go here (mounted read-only at /etc/nginx/certs).
+# Never commit real certificates or private keys: *.pem and *.key are
+# git-ignored by the root .gitignore.

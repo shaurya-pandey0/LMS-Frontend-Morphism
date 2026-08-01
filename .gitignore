@@ -59,11 +59,48 @@ ai-service/data/users/
 # Never commit real keys. *.env.example files ARE committed as templates,
 # and start-lifetrack.bat creates the real .env from them on first run.
 .env
-.env.local
-.env.*.local
+# Catch-all for every future variant (.env.prod, .env.app, .env.staging, ...).
+# The *.example templates below are the only ones that belong in the repo.
+.env.*
+!.env.example
+!.env.app.example
+!.env.ai.example
+!.env.*.example
 ai-service/.env
 *.pem
 *.key
+*.crt
+*.p12
+*.jks
+.htpasswd
+# SSH material, and GCP/AWS service-account key files.
+id_rsa*
+id_ed25519*
+*service-account*.json
+*credentials*.json
+gcp-*.json
+# Local compose overrides routinely hold host-specific ports and secrets.
+docker-compose.override.yml
+
+# --- Deployment artefacts --------------------------------------------------
+# Database dumps and vector-store archives from deploy/scripts/backup-db.sh.
+backups/
+# TLS material and host-mounted nginx overrides (keep the directories).
+deploy/nginx/certs/*
+!deploy/nginx/certs/.gitkeep
+deploy/nginx/conf.d/*
+!deploy/nginx/conf.d/.gitkeep
+# Database dumps and vector archives contain real user data even outside backups/.
+*.sql.gz
+*.dump
+
+# --- Local scratch --------------------------------------------------------
+# Working screenshots (cloud console panels, file listings). Deliberately
+# narrow patterns: the tracked mockups in UI/ and docs/ must stay.
+Before Deployment files/
+Modified Files Before Deployment Phase.png
+Screenshot *.png
+Screenshot *.jpg
 
 # frontend/.env holds only local service URLs (no secrets) and is required
 # for a fresh clone to build, so it is tracked deliberately.
@@ -72,8 +109,11 @@ ai-service/.env
 # --- Logs & temp ----------------------------------------------------------
 *.log
 logs/
-# Development-only snapshot of the exact outbound LLM request.
+# Development-only snapshots of the exact outbound LLM request. Both contain a
+# real user's name and aggregated lifestyle data, so neither belongs in the repo.
+# prompt.json was tracked by mistake; see the note in DEPLOYMENT-FILES.md.
 ai-service/prompt.md
+ai-service/prompt.json
 lint.txt
 *.tmp
 *.bak

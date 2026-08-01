@@ -1,0 +1,21 @@
+# Never ship secrets or local state into the image.
+.env
+.env.local
+.venv/
+venv/
+data/
+*.tvim
+*.npz
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+tests/
+docs/
+prompt.md
+prompt.json
+run.ps1
+README.md
+Dockerfile
+.dockerignore

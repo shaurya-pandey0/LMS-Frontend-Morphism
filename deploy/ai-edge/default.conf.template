@@ -1,0 +1,67 @@
+# =============================================================================
+#  AI VM edge gate.
+#
+#  ai-service has no authentication of its own, so nothing reaches it without
+#  the X-Internal-Token header that the app VM's nginx injects. This is the
+#  second layer; the first is a firewall rule that only allows the app VM's
+#  network tag to reach this port.
+#
+#  Rendered by the nginx entrypoint from these env vars:
+#    AI_UPSTREAM        http://ai-service:8100
+#    AI_SHARED_TOKEN    the shared secret (same value as the app VM's
+#                       AI_PROXY_TOKEN / AI_SHARED_TOKEN)
+# =============================================================================
+
+limit_req_zone $binary_remote_addr zone=ai_edge:10m rate=120r/m;
+limit_req_status 429;
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    resolver_timeout 5s;
+
+    server_tokens off;
+    client_max_body_size 8m;
+
+    # Never cache AI responses anywhere in between.
+    add_header Cache-Control "no-store" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    # --- Local container healthcheck (does not touch ai-service) ------------
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # --- Everything else requires the shared secret -------------------------
+    location / {
+        # `if` is limited to a bare `return` here, which is the one form that is
+        # safe inside a location block.
+        if ($http_x_internal_token != "${AI_SHARED_TOKEN}") {
+            return 403;
+        }
+
+        limit_req zone=ai_edge burst=20 nodelay;
+
+        set $ai_upstream "${AI_UPSTREAM}";
+        proxy_pass $ai_upstream;
+
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection        "";
+        # Do not forward the secret to the application.
+        proxy_set_header X-Internal-Token  "";
+
+        proxy_connect_timeout 5s;
+        proxy_send_timeout    180s;
+        proxy_read_timeout    180s;
+        proxy_buffering       off;
+    }
+}
