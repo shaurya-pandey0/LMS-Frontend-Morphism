@@ -286,6 +286,11 @@ Read these before exposing the instance publicly.
 - The backend and AI containers run as non-root (uid 10001 / 10002).
 - Switch `SPRING_JPA_HIBERNATE_DDL_AUTO` to `validate` once the schema settles,
   so a deploy can never silently alter tables.
+- **The five `APP_INSIGHTS_*` variables are inert.** They bind to
+  `InsightProperties`, which no class injects; `InsightService` reads every
+  threshold from the requesting user's `user_settings` row. Setting them changes
+  nothing — adjust thresholds per user via `PUT /api/settings`. Details in
+  [backend/README.md](backend/README.md#11-known-issues-and-limitations).
 - `.env` holds every secret. `chmod 600 .env`, and keep it out of git (it
   already is).
 

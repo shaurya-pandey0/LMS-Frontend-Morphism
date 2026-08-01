@@ -5,6 +5,7 @@ Standalone, provider-agnostic service exposing:
   GET    /models           – list models available on the configured provider
   POST   /insights         – LLM insights, Pydantic-validated, rule fallback
   POST   /chat             – grounded assistant chat (full or local_vector mode)
+  POST   /command          – natural language -> expense / daily-log draft payloads
   POST   /vectors/upsert   – embed + index a user's journal entries (local)
   POST   /vectors/search   – semantic search over a user's local index
   DELETE /vectors/{user_key} – drop a user's local store

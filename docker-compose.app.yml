@@ -78,6 +78,9 @@ services:
       APP_JWT_SECRET: ${APP_JWT_SECRET:?set APP_JWT_SECRET in .env}
       APP_JWT_EXPIRATION_MS: ${APP_JWT_EXPIRATION_MS:-86400000}
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost}
+      # Inert today: InsightProperties is injected nowhere and InsightService
+      # reads thresholds from each user's user_settings row. Passed through so
+      # the wiring exists if that changes. See backend/README.md §11.
       APP_INSIGHTS_MIN_SLEEP_HOURS: ${APP_INSIGHTS_MIN_SLEEP_HOURS:-6.0}
       APP_INSIGHTS_GOOD_SLEEP_HOURS: ${APP_INSIGHTS_GOOD_SLEEP_HOURS:-7.5}
       APP_INSIGHTS_WEEKLY_SPENDING_THRESHOLD: ${APP_INSIGHTS_WEEKLY_SPENDING_THRESHOLD:-1000.0}

@@ -451,8 +451,11 @@ apply before a public deployment.
 
 ## Documentation
 
+- [Backend guide](backend/README.md) — layers, security, API reference, domain
+  model and the rules that live in Spring
 - [Frontend guide](frontend/README.md) — React, Redux and the data flow, written
   for developers who do not work in frontend
+- [AI service guide](ai-service/README.md) — FastAPI, the JSON contract and fallbacks
 - [Deployment guide](DEPLOYMENT.md) — single-VM containerised stack, operations
 - [Split deployment guide](DEPLOYMENT-SPLIT.md) — app and AI service on separate VMs
 - [Deployment file index](DEPLOYMENT-FILES.md) — what every deployment file is for

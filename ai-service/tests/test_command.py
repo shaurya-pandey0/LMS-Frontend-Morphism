@@ -1,8 +1,22 @@
-"""Unit tests for /command endpoint in ai-service."""
+"""Unit tests for the /command endpoint in ai-service.
+
+These run against the deterministic rule path, never the LLM. Blanking the
+resolved model makes `/command` skip the provider entirely, which keeps the suite
+free, offline and repeatable — otherwise every run bills the configured API key
+and the assertions depend on model wording.
+
+The rule path shares all of the handler's normalisation (category matching,
+non-positive amount filtering, de-duplication, date defaulting), so this still
+covers the endpoint contract. Only the model's own inference is out of scope;
+verify that manually against a live provider.
+"""
 
 import unittest
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 
+from app import main
 from app.main import app
 from app.schemas import CommandStatus, CommandTarget
 
@@ -10,6 +24,10 @@ from app.schemas import CommandStatus, CommandTarget
 class TestCommandEndpoint(unittest.TestCase):
 
     def setUp(self):
+        # Empty model => `if model:` is False in the handler => no provider call.
+        patcher = patch.object(main.settings, "ai_model", "")
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self.client = TestClient(app)
 
     def test_command_chat_mode(self):
