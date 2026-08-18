@@ -97,6 +97,7 @@ deploy/nginx/conf.d/*
 # --- Local scratch --------------------------------------------------------
 # Working screenshots (cloud console panels, file listings). Deliberately
 # narrow patterns: the tracked mockups in UI/ and docs/ must stay.
+IGNORE/
 Before Deployment files/
 Modified Files Before Deployment Phase.png
 Screenshot *.png
