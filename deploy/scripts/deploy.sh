@@ -166,7 +166,7 @@ done
 probe() {
     local url="$1" expect="$2" code
     shift 2
-    code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 25 "$@" "$url" || echo 000)"
+    code="$(curl -s -k -L -o /dev/null -w '%{http_code}' --max-time 25 "$@" "$url" || echo 000)"
     if [[ "$code" == "$expect" ]]; then ok "$url -> $code"
     else warn "$url -> $code (expected $expect)"; failed=1; fi
 }
