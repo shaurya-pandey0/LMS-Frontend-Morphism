@@ -1,0 +1,34 @@
+name: Deploy to GCP VM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Build & Deploy LifeTrack
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy on GCP VM via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            echo "==> Deploying latest changes on VM..."
+            cd /opt/lifetrack
+            
+            # Pull latest changes from GitHub
+            git pull origin main
+            
+            # Rebuild and restart updated containers
+            bash deploy/scripts/deploy.sh --pull
+            
+            echo "==> Deployment to https://lifetrack.fun successful!"
