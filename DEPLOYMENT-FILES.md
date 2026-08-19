@@ -8,7 +8,7 @@ No application source was touched. The containers override config through
 environment variables, which Spring's relaxed binding and pydantic-settings
 already prefer over the checked-in dev defaults.
 
----
+
 
 ## Stack definitions (root)
 
