@@ -1,10 +1,9 @@
-# Design: Local Vector DB (TurboVec) for the LifeTrack AI Service
+# Design & Implementation: Local Vector Store for LifeTrack AI Service
 
-> Status: design / not yet implemented.
-> Location note: this document was placed here intentionally. The originally
-> requested path lived under `.metadata/.plugins/org.eclipse.swt/EBWebView/...`,
-> which is Microsoft Edge WebView2 managed storage (Eclipse's embedded browser)
-> and must not be hand-edited. Design docs belong with the service.
+> [!NOTE]
+> **Implementation Status: Active with NumPy Fallback**
+> The vector storage and retrieval architecture described here is implemented under `ai-service/app/vector/` (`store.py`, `index.py`, `retrieval.py`).
+> In production on GCP, the service actively runs the robust `NumpyFallbackIndex` (exact cosine similarity) for semantic search over user journal entries (`/vectors/upsert`, `/vectors/search`). TurboVec (4-bit quantizer) remains an optional accelerated backend.
 
 ## 1. Goal
 

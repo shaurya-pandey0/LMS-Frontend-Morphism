@@ -303,7 +303,7 @@ So the chat and the insight cards are grounded in different subsets of the same
 Spring context — a real inconsistency, not a design decision.
 
 If asked why the mapping lives in the browser at all: this is the same
-orchestration point recorded in `Integration Seams.md` section 8.2. Spring builds
+orchestration point recorded in `docs/architecture/INTEGRATION-SEAMS.md` section 8.2. Spring builds
 the trusted context, the browser only relays and renames fields, and moving the
 call server-to-server would remove the client from that path entirely.
 

@@ -2,7 +2,7 @@
 
 Every file added for deployment, what it is for, and what it does. Guides:
 [DEPLOYMENT.md](DEPLOYMENT.md) (one VM) and
-[DEPLOYMENT-SPLIT.md](DEPLOYMENT-SPLIT.md) (two VMs).
+[FUTURE SCOPE/DEPLOYMENT-SPLIT.md](FUTURE%20SCOPE/DEPLOYMENT-SPLIT.md) (two VMs reference).
 
 No application source was touched. The containers override config through
 environment variables, which Spring's relaxed binding and pydantic-settings
@@ -12,11 +12,11 @@ already prefer over the checked-in dev defaults.
 
 ## Stack definitions (root)
 
-| File | Why it exists | What it does |
+| File | Topology Role | What it does |
 |---|---|---|
-| `docker-compose.yml` | Single-VM topology | Defines `web`, `backend`, `ai-service`, `db`, plus `prometheus`/`grafana` behind a `monitoring` profile. Ports 80 and 443 are published; volumes `db_data`, `ai_vectors`. |
-| `docker-compose.app.yml` | Split topology, app VM | Same minus `ai-service`. `web` proxies `/ai` to the AI VM using `AI_UPSTREAM` and injects the shared secret. |
-| `docker-compose.ai.yml` | Split topology, AI VM | `ai-service` (never published) behind `ai-edge`, an nginx gate on host port 8100. Owns the `ai_vectors` volume. |
+| `docker-compose.yml` | **Active (Single-VM Prod)** | Defines `web`, `backend`, `ai-service`, `db`, plus `prometheus`/`grafana` behind a `monitoring` profile. Ports 80 and 443 are published; volumes `db_data`, `ai_vectors`. |
+| `docker-compose.app.yml` | *Standby (Split App VM)* | Same minus `ai-service`. `web` proxies `/ai` to the AI VM using `AI_UPSTREAM` and injects the shared secret. |
+| `docker-compose.ai.yml` | *Standby (Split AI VM)* | `ai-service` (never published) behind `ai-edge`, an nginx gate on host port 8100. Owns the `ai_vectors` volume. |
 | `.dockerignore` | Build hygiene | Keeps `.git`, `node_modules`, `target`, venvs, `ai-service/data` and `ai-service/.env` out of any root-context build. |
 | `Makefile` | Convenience | Short targets for the documented commands: `deploy`, `deploy-app`, `deploy-ai`, `logs-*`, `health`, `db-shell`, `backup`, `restore`, `seed`, `prune`. `make help` lists them. |
 
@@ -25,11 +25,11 @@ already prefer over the checked-in dev defaults.
 Copy one to `.env` on the host and fill it in. `.env` is git-ignored; these
 templates are tracked and hold no secrets.
 
-| File | Why it exists | What it does |
+| File | Topology Role | What it does |
 |---|---|---|
-| `.env.example` | Single VM | Every tunable and secret in one place, with the `openssl` command to generate each. Required: `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD`, `APP_JWT_SECRET`, `AI_API_KEY`, `USER_KEY_SALT`. |
-| `.env.app.example` | Split, app VM | Database, JWT and frontend build args, plus `AI_UPSTREAM` and `AI_SHARED_TOKEN`. Pins `COMPOSE_FILE=docker-compose.app.yml` so plain `docker compose` targets the right stack. |
-| `.env.ai.example` | Split, AI VM | LLM provider, retrieval and vector settings, `AI_SHARED_TOKEN`, `AI_BIND_IP`. Pins `COMPOSE_FILE=docker-compose.ai.yml`. No database config. |
+| `.env.example` | **Active (Single-VM Prod)** | Every tunable and secret in one place, with the `openssl` command to generate each. Required: `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD`, `APP_JWT_SECRET`, `AI_API_KEY`, `USER_KEY_SALT`. |
+| `.env.app.example` | *Standby (Split App VM)* | Database, JWT and frontend build args, plus `AI_UPSTREAM` and `AI_SHARED_TOKEN`. Pins `COMPOSE_FILE=docker-compose.app.yml` so plain `docker compose` targets the right stack. |
+| `.env.ai.example` | *Standby (Split AI VM)* | LLM provider, retrieval and vector settings, `AI_SHARED_TOKEN`, `AI_BIND_IP`. Pins `COMPOSE_FILE=docker-compose.ai.yml`. No database config. |
 
 ## Images
 
@@ -85,7 +85,7 @@ All are run as `bash deploy/scripts/<name>.sh`, so no execute bit is needed.
 | File | Why it exists | What it does |
 |---|---|---|
 | `DEPLOYMENT.md` | Single-VM guide | Architecture, firewall rules, VM prep, secrets, deploy, boot, HTTPS, CI/CD pipeline, cost optimization, demo data, operations, security caveats, troubleshooting, resource notes. |
-| `DEPLOYMENT-SPLIT.md` | Two-VM guide | How the halves connect, instance and firewall creation, per-host deploy order, secret rotation, a table of exactly what differs from the single-VM setup, and split-specific troubleshooting. |
+| `FUTURE SCOPE/DEPLOYMENT-SPLIT.md` | Two-VM reference | How the halves connect, instance and firewall creation, per-host deploy order, secret rotation, a table of exactly what differs from the single-VM setup, and split-specific troubleshooting. |
 | `DEPLOYMENT-FILES.md` | This index | Names and purpose of everything above. |
 
 ## Changed, not created

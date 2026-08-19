@@ -10,12 +10,10 @@ Everything runs as Docker containers behind a single nginx that serves the React
 bundle and reverse-proxies both APIs on the same origin. Ports 80 and 443
 are reachable from the internet; port 80 redirects all traffic to HTTPS.
 
-> **Two topologies are supported.** This guide covers all four services on one
-> VM, driven by `docker-compose.yml` and `.env`. To put nginx + Spring Boot +
-> MySQL on one VM and the AI service on a second one, follow
-> [DEPLOYMENT-SPLIT.md](DEPLOYMENT-SPLIT.md) instead — it uses
-> `docker-compose.app.yml` / `docker-compose.ai.yml` and reuses every image,
-> script and nginx config described here.
+> **Two topologies are documented.** This guide covers all four services on one
+> VM, driven by `docker-compose.yml` and `.env` (the live production deployment). For high-scale enterprise needs,
+> [FUTURE SCOPE/DEPLOYMENT-SPLIT.md](FUTURE%20SCOPE/DEPLOYMENT-SPLIT.md) preserves the reference architecture
+> for putting nginx + Spring Boot + MySQL on one VM and the AI service on a second one.
 
 ```
                  internet
@@ -483,4 +481,4 @@ backend service if you want a hard ceiling.
 Given that headroom, one VM is the right default. Split across two only when you
 have a concrete reason: scaling the AI service independently, isolating an LLM
 API key and its blast radius, or keeping a self-hosted model (LM Studio, vLLM) on
-a GPU machine. [DEPLOYMENT-SPLIT.md](DEPLOYMENT-SPLIT.md) covers that.
+a GPU machine. [FUTURE SCOPE/DEPLOYMENT-SPLIT.md](FUTURE%20SCOPE/DEPLOYMENT-SPLIT.md) covers that.

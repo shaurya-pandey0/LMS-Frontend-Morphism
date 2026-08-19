@@ -1,4 +1,4 @@
-﻿# LifeTrack Backend (Spring Boot)
+# LifeTrack Backend (Spring Boot)
 
 > **Live at [https://lifetrack.fun](https://lifetrack.fun)** -- this service runs
 > as a Docker container (`lifetrack/backend`) behind nginx on GCP Compute Engine.
@@ -637,6 +637,6 @@ deliberately in deployment.
 - [Frontend guide](../frontend/README.md) — how React consumes this API
 - [AI service](../ai-service/README.md) — the FastAPI side of the seam
 - [Deployment](../DEPLOYMENT.md) — containerised stack, HTTPS, CI/CD, env overrides, backups
-- [Integration Seams](../Integration%20Seams.md) — service-to-service contracts
+- [Integration Seams](../docs/architecture/INTEGRATION-SEAMS.md) — service-to-service contracts
 - [`Full Pipeline Tracing Docs/`](../Full%20Pipeline%20Tracing%20Docs) — request-by-request
   walkthroughs of auth, expenses, daily logs, analytics and AI insights

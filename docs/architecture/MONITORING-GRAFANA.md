@@ -242,19 +242,31 @@ in `monitoring/docker-compose.yml`.
 - Confirm the Prometheus target is `UP`.
 - Verify the metric name in Prometheus before using it in Grafana.
 
+## Production Deployment vs. Local Development
+
+| Environment | Scraping Target | Compose File / Profile | Exposure & Security |
+|---|---|---|---|
+| **Local Windows Dev** | `host.docker.internal:8080` | `monitoring/docker-compose.yml` | Ports `3000`/`9090` exposed on `localhost` |
+| **GCP Production VM** | `backend:8080` (container internal) | `docker-compose.yml` (`--profile monitoring`) | Ports bound to `127.0.0.1`; Nginx returns 403 on `/actuator/*` to public internet |
+
+### Starting Monitoring in Production (GCP)
+
+To launch Prometheus and Grafana on the GCP VM without exposing them publicly:
+
+```bash
+# On the GCP VM inside /opt/lifetrack:
+docker compose --profile monitoring up -d
+```
+
+- Prometheus scrapes Spring Boot internally via `http://backend:8080/actuator/prometheus` using `deploy/monitoring/prometheus.yml`.
+- Prometheus and Grafana dashboards are accessible via SSH tunnel (`ssh -L 3000:localhost:3000 -L 9090:localhost:9090 lifetrack`).
+- Nginx explicitly blocks external public access to `/actuator/*` with `403 Forbidden` in `frontend/nginx/default.conf.template`.
+
 ## Security and production limitations
 
-The current setup is for local development and academic demonstration:
-
-- `/actuator/**` is permitted without JWT by `SecurityConfig`.
-- Grafana uses default development credentials.
-- Prometheus and Grafana ports are exposed on the host.
-- monitoring data and dashboards have no configured persistent volume.
-- TLS and service authentication are not configured.
-
-Before public deployment, restrict Actuator exposure, secure Grafana, add network
-controls and authentication, use secrets instead of committed defaults, and add
-persistent volumes where required.
+- In local development, `/actuator/**` is permitted by `SecurityConfig` for ease of testing.
+- In production on GCP, public access to `/actuator/*` is blocked at the Nginx reverse proxy edge.
+- Prometheus and Grafana are run under the isolated `monitoring` profile and are never exposed to the public internet.
 
 ## Interview answer
 

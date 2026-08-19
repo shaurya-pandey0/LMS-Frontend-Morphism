@@ -148,12 +148,11 @@ deploy/                      Production Docker, Nginx, SSL and deployment script
 monitoring/                  Prometheus and Grafana Compose setup
 Full Pipeline Tracing Docs/  End-to-end feature walkthroughs
 UI/design-system/            Visual tokens and component guidance
-docs/PROJECT-STORY.md        Why and how the architecture evolved
-docs/backend-presentation-plan.md
-Integration Seams.md         Service-to-service contracts and trust boundaries
-Page Component Adding Guide.md
-MyQnA.md
-Grafana addation.md
+FUTURE SCOPE/                Unimplemented & scaling reference designs
+docs/                        Master documentation hub (Architecture, Deployment, Interview Prep)
+  ├── architecture/          System contracts, story, monitoring & guides
+  ├── deployment/            Local SSH, GCP billing & deployment files index
+  └── interview-prep/        Defense Q&A, AI fluency & backend presentation plan
 start-lifetrack.bat
 start-lifetrack.sh
 ```
@@ -465,35 +464,42 @@ bash deploy/scripts/deploy.sh              # build, start, verify & smoke test
 
 Two topologies are supported, sharing the same images and scripts:
 
-- **One VM** — `docker-compose.yml`. See [DEPLOYMENT.md](DEPLOYMENT.md).
-- **Two VMs** — nginx + Spring Boot + MySQL on one, the AI service on another
-  with no public ingress. See [DEPLOYMENT-SPLIT.md](DEPLOYMENT-SPLIT.md).
+- **Single VM (Production Active)** — `docker-compose.yml` on GCP Compute Engine. See [DEPLOYMENT.md](DEPLOYMENT.md).
+- **Two VMs (Future Enterprise Reference)** — nginx + Spring Boot + MySQL on one, the AI service on another with no public ingress. See [FUTURE SCOPE/DEPLOYMENT-SPLIT.md](FUTURE%20SCOPE/DEPLOYMENT-SPLIT.md).
 
 Both guides cover firewall rules, HTTPS, backups and the security caveats that
 apply before a public deployment.
 
-## Documentation
+## Documentation Hub
 
-- [Backend guide](backend/README.md) — layers, security, API reference, domain
-  model and the rules that live in Spring
-- [Frontend guide](frontend/README.md) — React, Redux and the data flow, written
-  for developers who do not work in frontend
-- [AI service guide](ai-service/README.md) — FastAPI, the JSON contract and fallbacks
-- [Deployment guide](DEPLOYMENT.md) — single-VM containerised stack, operations
-- [Split deployment guide](DEPLOYMENT-SPLIT.md) — app and AI service on separate VMs
-- [Deployment file index](DEPLOYMENT-FILES.md) — what every deployment file is for
-- [Project story](docs/PROJECT-STORY.md) — how and why the system evolved
-- [Integration seams](Integration%20Seams.md) — service-to-service contracts, the
-  LLM validation boundary and the known gaps at each seam
-- [Backend presentation plan](docs/backend-presentation-plan.md)
-- [Interview Q&A](MyQnA.md)
-- [Page component guide](Page%20Component%20Adding%20Guide.md)
-- [Design system](UI/design-system/README.md)
-- [JWT Authentication trace](Full%20Pipeline%20Tracing%20Docs/API%20Authentication/Tracing%20JWT%20Authentication.md)
-- [Create Expense trace](Full%20Pipeline%20Tracing%20Docs/API%20Create%20Expense/Tracing%20Create%20Expense%20API.md)
-- [Daily Log and Habits trace](Full%20Pipeline%20Tracing%20Docs/API%20Daily%20Log%20and%20Habits/Tracing%20Daily%20Log%20and%20Habits.md)
-- [Date-Range Analytics trace](Full%20Pipeline%20Tracing%20Docs/API%20Analytics/Tracing%20Date%20Range%20Analytics.md)
-- [AI Insights trace](Full%20Pipeline%20Tracing%20Docs/API%20AI%20Insights/Tracing%20AI%20Insights%20API.md)
+LifeTrack documentation is centralized under the [**Documentation Hub (`docs/README.md`)**](docs/README.md):
+
+### 🚢 Production Deployment & DevOps
+- [**Deployment Guide**](DEPLOYMENT.md) — Single-VM production stack, Let's Encrypt SSL/TLS, and container orchestration
+- [**Direct SSH & CI/CD Guide**](docs/deployment/LOCALPC-TO-VM.md) — Windows CMD/PowerShell ED25519 access and GitHub Actions secrets
+- [**GCP Billing Analysis**](docs/deployment/GCP-BILLING-ANALYSIS.md) — Resource optimization, machine downsizing, and daytime sleep schedule
+- [**Deployment File Index**](docs/deployment/DEPLOYMENT-FILES.md) — Purpose and behavior of all deployment files
+
+### 🏗️ Architecture & Core Mechanics
+- [**Integration Seams**](docs/architecture/INTEGRATION-SEAMS.md) — Service-to-service contracts, Pydantic validation, and trust boundaries
+- [**Project Story**](docs/architecture/PROJECT-STORY.md) — The 4-stage evolutionary story of LifeTrack
+- [**Initial Promise & Motivation**](docs/architecture/INITIAL-PROMISE.md) — Problem statement and 3-pillar tracking philosophy
+- [**Prometheus & Grafana Monitoring**](docs/architecture/MONITORING-GRAFANA.md) — Actuator metrics, container scraping, and Grafana setup
+- [**Page Component Adding Guide**](docs/architecture/PAGE-COMPONENT-GUIDE.md) — Frontend component patterns and styling standards
+
+### 🎯 Interview Defense & Prep
+- [**Project Technical Q&A**](docs/interview-prep/PROJECT-QNA.md) — Full-stack defense, state management, and DB design answers
+- [**AI Fluency & LLM Architecture**](docs/interview-prep/AI-FLUENCY.md) — Prompt construction, fallbacks, and provider-agnostic design
+- [**Backend Presentation Plan**](docs/interview-prep/BACKEND-PRESENTATION-PLAN.md) — Vertical slice walkthroughs across the stack
+- [**React Questions & Lifecycle**](docs/interview-prep/REACT-QUESTIONS.md) — Hooks, Redux Toolkit, and rendering optimization
+
+### 🔭 Future Scope & Deep Dives
+- [**Future Scope & Reference Blueprints**](FUTURE%20SCOPE/README.md) — Split 2-VM topology and local RAG vector DB
+- [**Backend Subsystem Guide**](backend/README.md)
+- [**Frontend Subsystem Guide**](frontend/README.md)
+- [**AI Subsystem Guide**](ai-service/README.md)
+- [**UI Design System**](UI/design-system/README.md)
+- [**Full Pipeline Tracing Docs**](Full%20Pipeline%20Tracing%20Docs/)
 
 ---
 

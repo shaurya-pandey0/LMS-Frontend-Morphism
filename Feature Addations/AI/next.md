@@ -1,3 +1,0 @@
-Auth on the AI service. Simplest version: a shared secret header between Spring and FastAPI. Better version: forward the user's JWT and have FastAPI derive the user key from it, so user_key stops being client-supplied.
-Move orchestration server-side. Spring calls the AI service, passing context it built itself. One round trip, no client-tamperable context, and the diagram becomes a clean chain instead of a fork.
-One source of vocabulary. Have the AI service pull categories and moods from /api/reference at startup instead of hardcoding them, or at least fail loudly on an unknown value rather than coercing to Misc.
