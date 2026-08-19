@@ -1,4 +1,10 @@
-# LifeTrack AI Service
+﻿# LifeTrack AI Service
+
+> **Live at [https://lifetrack.fun/ai/](https://lifetrack.fun/ai/)** -- this
+> service runs as a Docker container (`lifetrack/ai-service`) behind nginx on
+> GCP Compute Engine. Accessible at `/ai/*` through the nginx reverse proxy;
+> the `/ai/` prefix is stripped before reaching FastAPI.
+> See [DEPLOYMENT.md](../DEPLOYMENT.md) for the full production setup.
 
 A standalone FastAPI microservice that adds AI features to LifeTrack, kept
 completely separate from the Spring Boot backend. It provides LLM-powered

@@ -12,7 +12,7 @@ already prefer over the checked-in dev defaults.
 
 | File | Why it exists | What it does |
 |---|---|---|
-| `docker-compose.yml` | Single-VM topology | Defines `web`, `backend`, `ai-service`, `db`, plus `prometheus`/`grafana` behind a `monitoring` profile. Only port 80 is published; volumes `db_data`, `ai_vectors`. |
+| `docker-compose.yml` | Single-VM topology | Defines `web`, `backend`, `ai-service`, `db`, plus `prometheus`/`grafana` behind a `monitoring` profile. Ports 80 and 443 are published; volumes `db_data`, `ai_vectors`. |
 | `docker-compose.app.yml` | Split topology, app VM | Same minus `ai-service`. `web` proxies `/ai` to the AI VM using `AI_UPSTREAM` and injects the shared secret. |
 | `docker-compose.ai.yml` | Split topology, AI VM | `ai-service` (never published) behind `ai-edge`, an nginx gate on host port 8100. Owns the `ai_vectors` volume. |
 | `.dockerignore` | Build hygiene | Keeps `.git`, `node_modules`, `target`, venvs, `ai-service/data` and `ai-service/.env` out of any root-context build. |
@@ -51,14 +51,20 @@ templates are tracked and hold no secrets.
 | `deploy/nginx/certs/.gitkeep` | Mount point | Where `fullchain.pem` and `privkey.pem` go, mounted read-only. Contents are git-ignored. |
 | `deploy/ai-edge/default.conf.template` | Split only: AI VM gate | `ai-service` has no auth, so this nginx sits in front of it and rejects anything without a matching `X-Internal-Token` (403), rate-limits the rest, and strips the header before forwarding so the secret never reaches application code. |
 
+## CI/CD
+
+| File | Why it exists | What it does |
+|---|---|---|
+| `.github/workflows/deploy.yml` | Automated deployment | On every push to `main`, checks out the code, SSHs into the GCP VM using secrets (`VM_HOST`, `VM_USER`, `VM_SSH_KEY`), runs `git pull origin main` and `deploy.sh --pull` to rebuild and redeploy changed containers with health checks and smoke tests. |
+
 ## Scripts
 
 All are run as `bash deploy/scripts/<name>.sh`, so no execute bit is needed.
 
 | File | Why it exists | What it does |
 |---|---|---|
-| `deploy/scripts/bootstrap-vm.sh` | One-time host setup | Installs Docker Engine and the compose plugin from Docker's apt repo for Debian 13, sets log rotation and `live-restore` in `/etc/docker/daemon.json`, adds the user to the `docker` group, applies sysctls, installs `mysql-client`/`git`/`jq`, and prints the firewall rules to create. |
-| `deploy/scripts/deploy.sh` | Build, start, verify | Validates `.env` (rejects empty required vars, checks the JWT key length and `AI_UPSTREAM` shape), builds, starts, waits for every container to report healthy, then smoke-tests. Takes `--role all\|app\|ai`, inferred from `COMPOSE_FILE` when omitted. Also `--pull`, `--no-build`, `--monitoring`. |
+| `deploy/scripts/bootstrap-vm.sh` | One-time host setup | Installs Docker Engine and the compose plugin from Docker's apt repo for Debian 13, sets log rotation and `live-restore` in `/etc/docker/daemon.json`, adds the user to the `docker` group, applies sysctls, installs `mariadb-client-compat`/`git`/`jq`, and prints the firewall rules to create. |
+| `deploy/scripts/deploy.sh` | Build, start, verify | Validates `.env` (rejects empty required vars, checks the JWT key length and `AI_UPSTREAM` shape), builds, starts, waits for every container to report healthy, then smoke-tests. Takes `--role all\|app\|ai`, inferred from `COMPOSE_FILE` when omitted. Also `--pull`, `--no-build`, `--monitoring`. Uses `-k -L` flags for smoke tests to follow HTTPS redirects. |
 | `deploy/scripts/backup-db.sh` | Durability | Dumps MySQL with `--single-transaction` and archives the `ai_vectors` volume, skipping whichever the host does not have — so the same cron line is correct on a single VM or on either half of a split. Prunes beyond `RETENTION_DAYS`. |
 | `deploy/scripts/restore-db.sh` | Recovery | Stops the backend, restores a gzipped dump, restarts. Requires typing the database name to confirm unless `FORCE=1`. |
 | `deploy/scripts/seed-demo.sh` | Demo data | Loads `backend/scripts/seed-demo-7-days.sql` after checking the schema exists and that users 1 and 2 are present, since that script creates neither. Idempotent. |
@@ -70,13 +76,13 @@ All are run as `bash deploy/scripts/<name>.sh`, so no execute bit is needed.
 | `deploy/monitoring/prometheus.yml` | Container-aware scraping | Scrapes `backend:8080/actuator/prometheus` by compose service name. The existing `monitoring/prometheus.yml` targets `host.docker.internal` for local Windows development and is left alone. |
 | `deploy/monitoring/grafana/provisioning/datasources/prometheus.yml` | Zero-click Grafana | Provisions Prometheus as the default, non-editable datasource. |
 | `deploy/mysql/init/.gitkeep` | First-boot hook | Mounted at `/docker-entrypoint-initdb.d`. Notes that scripts here run before Hibernate creates any tables, so they suit database-level setup only, not row seeding. |
-| `deploy/lifetrack.service` | Start on boot | systemd unit running `docker compose up -d` in `/opt/lifetrack`. Reads `COMPOSE_FILE` from `.env`, so the same unit works unmodified on either half of a split. |
+| `deploy/lifetrack.service` | Start on boot | systemd unit running `docker compose up -d` in `/opt/lifetrack`. Reads `COMPOSE_FILE` from `.env`, so the same unit works unmodified on either half of a split. Currently **active and enabled** on `instance-20260801-185224`. |
 
 ## Documentation
 
 | File | Why it exists | What it does |
 |---|---|---|
-| `DEPLOYMENT.md` | Single-VM guide | Architecture, firewall rules, VM prep, secrets, deploy, boot, HTTPS, demo data, operations, security caveats, troubleshooting, resource notes. |
+| `DEPLOYMENT.md` | Single-VM guide | Architecture, firewall rules, VM prep, secrets, deploy, boot, HTTPS, CI/CD pipeline, cost optimization, demo data, operations, security caveats, troubleshooting, resource notes. |
 | `DEPLOYMENT-SPLIT.md` | Two-VM guide | How the halves connect, instance and firewall creation, per-host deploy order, secret rotation, a table of exactly what differs from the single-VM setup, and split-specific troubleshooting. |
 | `DEPLOYMENT-FILES.md` | This index | Names and purpose of everything above. |
 
@@ -84,17 +90,23 @@ All are run as `bash deploy/scripts/<name>.sh`, so no execute bit is needed.
 
 | File | Change |
 |---|---|
-| `.gitignore` | Ignores `backups/`, database dumps, TLS and SSH material, service-account key files, `docker-compose.override.yml`, local screenshots, and the contents of `deploy/nginx/certs` and `deploy/nginx/conf.d` while keeping the directories. Also switched the env rule to a catch-all `.env.*` with explicit exceptions for the `*.example` templates, so a future `.env.staging` cannot be committed by accident. |
+| `.gitignore` | Ignores `backups/`, database dumps, TLS and SSH material, service-account key files, `docker-compose.override.yml`, local screenshots, `IGNORE/` directory, and the contents of `deploy/nginx/certs` and `deploy/nginx/conf.d` while keeping the directories. Also switched the env rule to a catch-all `.env.*` with explicit exceptions for the `*.example` templates, so a future `.env.staging` cannot be committed by accident. |
 | `ai-service/prompt.json` | **Untracked** (`git rm --cached`, file kept on disk). A debug snapshot of the last outbound LLM request, regenerated on every call and containing a real user name plus aggregated lifestyle figures. Its sibling `prompt.md` was already ignored for the same reason; this one was tracked by oversight and is present in commit `d47a77a`. |
-| `README.md` | New Deployment section and two links in the documentation list. |
+| `README.md` | Added live deployment link (`https://lifetrack.fun`), CI/CD pipeline reference, GCP architecture details, updated technology table with Edge/Proxy and DevOps rows, and updated repository layout with `deploy/` and `.github/workflows/`. |
 | `frontend/nginx/default.conf` | **Deleted**, replaced by `default.conf.template` so the upstreams can be set per topology without rebuilding. |
+| `frontend/index.html` | Updated favicon from `favicon.svg` to `preview_rounded.webp` (rounded-corner brand icon). |
+| `deploy/scripts/deploy.sh` | Added `-k -L` flags to curl in `probe()` function so smoke tests follow HTTPS redirects correctly. |
 
 ## Which files you actually edit
 
 - **Per host:** `.env` only. Everything else is the same on both VMs.
 - **To enable HTTPS:** copy `deploy/nginx/tls.conf.example` into
   `deploy/nginx/conf.d/`, add certs, uncomment the 443 mapping in the compose
-  file.
+  file, and update `APP_CORS_ALLOWED_ORIGINS` / `CORS_ALLOWED_ORIGINS` in `.env`
+  with the `https://` domain.
+- **To set up CI/CD:** add `VM_HOST`, `VM_USER`, `VM_SSH_KEY` as GitHub
+  repository secrets; the workflow file `.github/workflows/deploy.yml` is
+  already committed.
 - **Never edited by hand:** `/etc/nginx/conf.d/default.conf` inside the `web`
   container. It is generated from the template at start-up; read it with
   `docker compose exec web cat /etc/nginx/conf.d/default.conf` when debugging.

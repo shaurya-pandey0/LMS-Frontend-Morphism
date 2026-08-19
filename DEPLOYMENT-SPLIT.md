@@ -1,4 +1,4 @@
-# LifeTrack — Deployment Guide (split across two VMs)
+﻿# LifeTrack — Deployment Guide (split across two VMs)
 
 Two Debian 13 instances in the same VPC and zone:
 
@@ -12,7 +12,8 @@ Two Debian 13 instances in the same VPC and zone:
 | Suggested tag | `lifetrack-app` | `lifetrack-ai` |
 | Suggested size | e2-standard-4 | e2-standard-2 (or a GPU box for a local model) |
 
-For everything on one VM, use [DEPLOYMENT.md](DEPLOYMENT.md) instead. The two
+For everything on one VM, use [DEPLOYMENT.md](DEPLOYMENT.md) instead
+(that is the **active topology** at [https://lifetrack.fun](https://lifetrack.fun)). The two
 guides share all images, scripts and configs; only the wiring differs.
 
 ```

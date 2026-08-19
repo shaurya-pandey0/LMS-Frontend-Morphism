@@ -1,4 +1,9 @@
-# LifeTrack Backend (Spring Boot)
+﻿# LifeTrack Backend (Spring Boot)
+
+> **Live at [https://lifetrack.fun](https://lifetrack.fun)** -- this service runs
+> as a Docker container (`lifetrack/backend`) behind nginx on GCP Compute Engine.
+> Environment variables in `.env` override all `application.yml` defaults.
+> See [DEPLOYMENT.md](../DEPLOYMENT.md) for the full production setup.
 
 The trusted core of LifeTrack. It owns user identity, persistence, every business
 rule, and all analytical calculation. The React app renders what this service
@@ -602,7 +607,10 @@ side: resolve the submitted value to the canonical entry before saving.
 because the port is not published in the deployment topologies and nginx returns
 403 for `/actuator/`. Do not publish 8080.
 
-Swagger UI and `/v3/api-docs` are likewise public.
+Swagger UI and `/v3/api-docs` are likewise public. In production at
+`lifetrack.fun`, Swagger is intentionally NOT exposed through the HTTPS
+`tls.conf` server block — only the HTTP port 80 `default.conf.template`
+carries the `/swagger-ui/` location, and port 80 redirects to HTTPS.
 
 ### Server timezone decides "today"
 
@@ -628,7 +636,7 @@ deliberately in deployment.
 - [Root README](../README.md) — the whole project
 - [Frontend guide](../frontend/README.md) — how React consumes this API
 - [AI service](../ai-service/README.md) — the FastAPI side of the seam
-- [Deployment](../DEPLOYMENT.md) — containerised stack, env overrides, backups
+- [Deployment](../DEPLOYMENT.md) — containerised stack, HTTPS, CI/CD, env overrides, backups
 - [Integration Seams](../Integration%20Seams.md) — service-to-service contracts
 - [`Full Pipeline Tracing Docs/`](../Full%20Pipeline%20Tracing%20Docs) — request-by-request
   walkthroughs of auth, expenses, daily logs, analytics and AI insights

@@ -1,4 +1,10 @@
-# LifeTrack Frontend — a guide for backend developers
+﻿# LifeTrack Frontend — a guide for backend developers
+
+> **Live at [https://lifetrack.fun](https://lifetrack.fun)** -- the production
+> build is served by nginx (`lifetrack/web` Docker image) with `VITE_API_BASE_URL=/api`
+> and `VITE_AI_BASE_URL=/ai`, so all API calls are same-origin via the reverse proxy.
+> Favicon: `preview_rounded.webp` (rounded-corner brand icon).
+> See [DEPLOYMENT.md](../DEPLOYMENT.md) for the full production setup.
 
 This is written for people who are strong in Java/Spring or Python but have
 never really worked in React. It explains how this specific app works, not

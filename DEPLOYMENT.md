@@ -1,10 +1,14 @@
 # LifeTrack — Deployment Guide (single VM)
 
-Target: **GCE `instance-20260801-185224`**, Debian 13 (trixie), e2-standard-8 (8 vCPU / 32 GB), zone `us-central1-a`.
+Target: **GCE `instance-20260801-185224`**, Debian 13 (trixie), e2-standard-4 (4 vCPU / 16 GB), zone `us-central1-a`.
+
+> **Currently live at [https://lifetrack.fun](https://lifetrack.fun)** — HTTPS via Let's Encrypt,
+> automated GitHub Actions CI/CD on `git push origin main`, and IST sleep
+> schedule (`07:00`–`23:00`) for cost optimization.
 
 Everything runs as Docker containers behind a single nginx that serves the React
-bundle and reverse-proxies both APIs on the same origin. Only port 80 (and 443
-once you add a certificate) is reachable from the internet.
+bundle and reverse-proxies both APIs on the same origin. Ports 80 and 443
+are reachable from the internet; port 80 redirects all traffic to HTTPS.
 
 > **Two topologies are supported.** This guide covers all four services on one
 > VM, driven by `docker-compose.yml` and `.env`. To put nginx + Spring Boot +
@@ -15,7 +19,7 @@ once you add a certificate) is reachable from the internet.
 
 ```
                  internet
-                    │  :80 / :443
+                    │  :80 / :443 (SSL)
           ┌─────────▼──────────┐
           │  web  (nginx)      │   React SPA  +  reverse proxy
           └──┬──────────────┬──┘
@@ -34,7 +38,7 @@ once you add a certificate) is reachable from the internet.
 
 | Service | Image | Network exposure |
 |---|---|---|
-| `web` | built from `frontend/Dockerfile` | **public** `${HTTP_PORT:-80}` |
+| `web` | built from `frontend/Dockerfile` | **public** `${HTTP_PORT:-80}`, `${HTTPS_PORT:-443}` |
 | `backend` | built from `backend/Dockerfile` | internal only, `:8080` |
 | `ai-service` | built from `ai-service/Dockerfile` | internal only, `:8100` |
 | `db` | `mysql:8.4` | internal only, `:3306` |
@@ -71,6 +75,7 @@ deploy/scripts/deploy.sh            build + up + health + smoke tests (--role)
 deploy/scripts/backup-db.sh         mysqldump + vector store archive
 deploy/scripts/restore-db.sh        restore a dump
 deploy/scripts/seed-demo.sh         load backend/scripts/seed-demo-7-days.sql
+.github/workflows/deploy.yml       GitHub Actions CI/CD pipeline
 Makefile                            shortcuts for the commands below
 DEPLOYMENT-FILES.md                 per-file index of everything listed here
 ```
@@ -102,7 +107,7 @@ build instead of the deploy.
 
 ---
 
-## 1. Open the firewall (from your workstation)
+## 1. Open the firewall (from your workstation or GCP Console)
 
 ```bash
 gcloud compute firewall-rules create lifetrack-allow-http \
@@ -112,6 +117,10 @@ gcloud compute firewall-rules create lifetrack-allow-http \
 gcloud compute instances add-tags instance-20260801-185224 \
   --zone=us-central1-a --tags=lifetrack
 ```
+
+> **Note:** If `gcloud` on the VM returns `insufficient authentication scopes`,
+> create the firewall rule and add the tag through the **GCP Console** UI instead
+> (VPC Network → Firewall → Create Firewall Rule).
 
 Do not open 8080, 8100, 3306, 9090 or 3000. Reach the private ones over SSH:
 
@@ -134,7 +143,12 @@ exec newgrp docker          # picks up the docker group without reconnecting
 
 `bootstrap-vm.sh` installs Docker Engine + the compose plugin from Docker's apt
 repo, sets log rotation and `live-restore` in `/etc/docker/daemon.json`, applies
-a few sysctls, and installs `mysql-client`, `git`, `jq`.
+a few sysctls, and installs `mariadb-client-compat` (MySQL-compatible client on
+Debian 13), `git`, `jq`.
+
+> **Debian 13 (Trixie) note:** The `mysql-client` package is not available in
+> Debian 13's default repositories. The bootstrap script uses
+> `mariadb-client-compat` as a drop-in replacement.
 
 If you cannot use git on the VM, copy the tree up instead:
 
@@ -194,17 +208,127 @@ sudo sed -i "s|/opt/lifetrack|$(pwd)|g" /etc/systemd/system/lifetrack.service
 sudo systemctl daemon-reload && sudo systemctl enable --now lifetrack
 ```
 
-## 6. HTTPS (recommended)
+> **Current setup:** `lifetrack.service` is active and enabled on
+> `instance-20260801-185224`. All containers start automatically on VM boot.
 
-Point a DNS A record at the VM's external IP, then follow the header comment in
-`deploy/nginx/tls.conf.example`: obtain a certificate with certbot, drop
-`fullchain.pem`/`privkey.pem` in `deploy/nginx/certs/`, copy the example to
-`deploy/nginx/conf.d/tls.conf`, replace `your.domain.com`, uncomment the 443
-port mapping for `web` in `docker-compose.yml`, then `docker compose up -d web`.
-The config is bind-mounted, so certificate renewals need only
+## 6. HTTPS (active ✅)
+
+> **Status:** HTTPS is live at [https://lifetrack.fun](https://lifetrack.fun)
+> with a Let's Encrypt certificate (auto-renews via `certbot.timer`).
+
+To set up HTTPS on a fresh deployment:
+
+1. **Point DNS**: Add an `A` record for your domain pointing to the VM's
+   external IP.
+
+2. **Install certbot and generate the certificate:**
+   ```bash
+   sudo apt-get update && sudo apt-get install -y certbot
+   docker compose stop web
+   sudo certbot certonly --standalone -d yourdomain.com -d www.yourdomain.com \
+     --agree-tos --no-eff-email -m your@email.com
+   ```
+
+3. **Copy certificates and enable TLS:**
+   ```bash
+   sudo mkdir -p deploy/nginx/certs
+   sudo cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem deploy/nginx/certs/
+   sudo cp /etc/letsencrypt/live/yourdomain.com/privkey.pem deploy/nginx/certs/
+   sudo chown -R "$USER":"$USER" deploy/nginx/certs
+   cp deploy/nginx/tls.conf.example deploy/nginx/conf.d/tls.conf
+   sed -i 's/your.domain.com/yourdomain.com/g' deploy/nginx/conf.d/tls.conf
+   ```
+
+4. **Enable port 443 and restart:**
+   ```bash
+   # Uncomment the 443 port mapping in docker-compose.yml
+   sed -i 's/# - "${HTTPS_PORT:-443}:443"/ - "${HTTPS_PORT:-443}:443"/' docker-compose.yml
+   docker compose up -d web
+   ```
+
+5. **Update CORS origins in `.env`:**
+   ```
+   APP_CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+   CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+   ```
+   Then: `docker compose up -d backend ai-service`
+
+The certificate renews automatically via `certbot.timer`. The config is
+bind-mounted, so renewals need only
 `docker compose exec web nginx -s reload`.
 
-## 7. Demo data (optional)
+## 7. CI/CD Pipeline (active ✅)
+
+> **Status:** Every push to `main` triggers `.github/workflows/deploy.yml`,
+> which SSHs into the VM and runs `git pull && deploy.sh --pull`.
+
+### Setup (already done for `instance-20260801-185224`)
+
+1. **Generate an SSH key pair on the VM:**
+   ```bash
+   ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/github_actions_key -N ""
+   cat ~/.ssh/github_actions_key.pub >> ~/.ssh/authorized_keys
+   chmod 600 ~/.ssh/authorized_keys
+   ```
+
+2. **Add 3 secrets in GitHub → Settings → Secrets → Actions:**
+
+   | Secret Name | Value |
+   |---|---|
+   | `VM_HOST` | `lifetrack.fun` (or the VM's external IP) |
+   | `VM_USER` | `aidevelopment11` (Linux username on the VM) |
+   | `VM_SSH_KEY` | Full contents of `~/.ssh/github_actions_key` (private key) |
+
+3. **Ensure SSH (port 22) is allowed** in GCP firewall (the `default-allow-ssh`
+   rule covers this).
+
+### Workflow file (`.github/workflows/deploy.yml`)
+
+```yaml
+name: Deploy to GCP VM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Build & Deploy LifeTrack
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy on GCP VM via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            cd /opt/lifetrack
+            git pull origin main
+            bash deploy/scripts/deploy.sh --pull
+```
+
+## 8. Cost Optimization: Instance Schedule (active ✅)
+
+> **Status:** `ist-daytime-schedule` is attached. VM auto-starts at **07:00 IST**
+> and auto-stops at **23:00 IST** every day, reducing daily compute cost by ~33%.
+
+To configure on a fresh deployment:
+
+1. Go to **Compute Engine → Instance schedules** in GCP Console.
+2. Create a schedule with timezone `Asia/Kolkata`, start `07:00`, stop `23:00`.
+3. Attach the schedule to your VM instance.
+
+Combined with the downsize from `e2-standard-8` to `e2-standard-4`, total cost
+savings are **~67%** (from ~₹200/day to ~₹66/day).
+
+## 9. Demo data (optional)
 
 The schema is created by Hibernate (`ddl-auto: update`) on first backend boot —
 there are no migration files. `backend/scripts/seed-demo-7-days.sql` needs users
@@ -227,7 +351,7 @@ docker compose logs -f --tail=200            # everything
 docker compose restart ai-service
 docker compose exec db mysql -uroot -p"$MYSQL_ROOT_PASSWORD" lifestyle_ai
 
-# Update to the latest code
+# Update to the latest code (also triggered automatically by GitHub Actions)
 git pull && bash deploy/scripts/deploy.sh --pull
 
 # Rebuild one service only
@@ -280,6 +404,8 @@ Read these before exposing the instance publicly.
   8080 or remove that nginx block.
 - **Swagger UI is proxied** at `/swagger-ui/`. Comment out that `location`
   block in `frontend/nginx/default.conf.template` for a production deployment.
+  **Current production status:** Swagger is intentionally NOT exposed through the
+  HTTPS `tls.conf` server block on `lifetrack.fun`.
 - Grafana is bound to `127.0.0.1` and requires `GRAFANA_ADMIN_PASSWORD`; sign-up
   is disabled. Reach it through the SSH tunnel above, not a firewall rule.
 - MySQL is not published to the host and uses a dedicated non-root app user.
@@ -329,7 +455,16 @@ the template at start-up, so read it from the container rather than the repo:
 `docker compose exec web cat /etc/nginx/conf.d/default.conf`.
 
 **Frontend build fails on `npm ci`** — `frontend/package-lock.json` must be in
-sync with `package.json`. Run `npm install` locally and commit the lockfile.
+sync with `package.json`. Run `npm install` locally (or via
+`docker run --rm -v "$(pwd)/frontend:/app" -w /app node:22-alpine npm install`)
+and commit the lockfile.
+
+**DNS transient errors during Docker build (`apk add` fails)** — restart Docker:
+`sudo systemctl restart docker`, then re-run `deploy.sh`.
+
+**`Invalid CORS request` after enabling HTTPS** — update
+`APP_CORS_ALLOWED_ORIGINS` and `CORS_ALLOWED_ORIGINS` in `.env` to include your
+`https://` domain, then restart: `docker compose up -d backend ai-service`.
 
 **Out of disk** — `docker system prune -af --volumes` removes unused images
 *and unused volumes*; run `docker compose ps` first and never use `--volumes`
@@ -338,11 +473,12 @@ while the stack is down, or you can lose `db_data`. Safer:
 
 ## Resource notes
 
-The 8 vCPU / 32 GB instance is comfortably oversized for this stack. Defaults
-set here: MySQL InnoDB buffer pool 2 GB, JVM capped at 70 % of available RAM,
-2 uvicorn workers, Prometheus retention 15 days. Since no per-container memory
-limits are set, `MaxRAMPercentage=70` is computed against total host RAM — add
-`mem_limit` to the backend service if you want a hard ceiling.
+The 4 vCPU / 16 GB instance (downsized from the original 8 vCPU / 32 GB) is
+comfortably sized for this stack. Defaults set here: MySQL InnoDB buffer pool
+2 GB, JVM capped at 70 % of available RAM, 2 uvicorn workers, Prometheus
+retention 15 days. Since no per-container memory limits are set,
+`MaxRAMPercentage=70` is computed against total host RAM — add `mem_limit` to the
+backend service if you want a hard ceiling.
 
 Given that headroom, one VM is the right default. Split across two only when you
 have a concrete reason: scaling the AI service independently, isolating an LLM

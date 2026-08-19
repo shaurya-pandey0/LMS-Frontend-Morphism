@@ -8,7 +8,16 @@ expenses and journals, configure personal targets, inspect date-range analytics,
 receive deterministic insights, chat with an AI assistant, and review
 AI-extracted Expense or Daily Log drafts before saving them.
 
-This README describes the current repository as of **30 July 2026**.
+---
+
+### 🌐 Live Production Deployment
+* **Live Website:** [https://lifetrack.fun](https://lifetrack.fun) 🔒 *(SSL/TLS Encrypted via Let's Encrypt)*
+* **Cloud Platform:** Google Cloud Platform (GCP Compute Engine — Debian 13)
+* **CI/CD Automation:** GitHub Actions (`.github/workflows/deploy.yml`) — Auto-builds, tests, and deploys on `git push origin main`
+* **Container Orchestration:** Docker Compose (Nginx reverse proxy + React SPA + Spring Boot + FastAPI + MySQL)
+* **Cost Optimization:** Automated sleep schedule (`07:00` to `23:00 IST`) saving 67% on cloud compute
+
+---
 
 ## Architecture
 
@@ -47,6 +56,8 @@ sidecar**. It is not a complete microservice architecture.
 Spring is the trusted application core. FastAPI does not query the LifeTrack
 database or decide which user's data to read. In the current local architecture,
 React obtains authenticated context from Spring and then calls FastAPI.
+
+In production on **GCP**, Nginx serves as the reverse proxy on ports **80** and **443 (HTTPS)**, securely routing same-origin requests `/api/*` to Spring Boot and `/ai/*` to FastAPI without exposing backend or database ports to the public internet.
 
 ## Implemented features
 
@@ -122,6 +133,8 @@ LifeTrack does not currently collect actual smartwatch or step-counter data.
 | API documentation | springdoc OpenAPI and Swagger UI |
 | AI service | Python, FastAPI, Pydantic |
 | AI protocol | OpenAI-compatible chat completions |
+| Edge / Proxy | Nginx 1.27 (Alpine) with Let's Encrypt SSL/TLS |
+| DevOps & Cloud | Docker, Docker Compose, GitHub Actions CI/CD, GCP Compute Engine |
 | Monitoring | Actuator, Micrometer, Prometheus and Grafana |
 
 ## Repository layout
@@ -130,6 +143,8 @@ LifeTrack does not currently collect actual smartwatch or step-counter data.
 backend/                     Spring Boot application
 frontend/                    React/Vite application
 ai-service/                  Optional FastAPI AI sidecar
+deploy/                      Production Docker, Nginx, SSL and deployment scripts
+.github/workflows/           GitHub Actions CI/CD pipeline
 monitoring/                  Prometheus and Grafana Compose setup
 Full Pipeline Tracing Docs/  End-to-end feature walkthroughs
 UI/design-system/            Visual tokens and component guidance
@@ -428,16 +443,24 @@ It does not create users or credentials. Confirm those IDs before running it.
 - `ddl-auto: update` is not a production migration strategy
 - Vector endpoints exist but are not integrated into the normal React flow
 
-## Deployment
+## Production Deployment & CI/CD
 
 The repository ships a containerised production stack: nginx serves the React
 bundle and reverse-proxies `/api` to Spring Boot and `/ai` to FastAPI, with
-MySQL and optional Prometheus/Grafana alongside. On a fresh Debian VM:
+MySQL on named persistent volumes and optional Prometheus/Grafana alongside.
 
+### 🔄 Automated CI/CD (GitHub Actions)
+Every commit pushed to the `main` branch triggers `.github/workflows/deploy.yml`:
+1. Connects to the GCP VM over SSH via key-based authentication.
+2. Pulls the latest code (`git pull origin main`).
+3. Rebuilds and restarts updated containers via `deploy.sh --pull`.
+4. Executes automated health checks and smoke tests against `/healthz`, `/api/health`, and `/ai/health`.
+
+### 🚀 Setup on a Fresh Debian 13 VM:
 ```bash
-sudo bash deploy/scripts/bootstrap-vm.sh   # installs Docker
-cp .env.example .env && nano .env          # secrets
-bash deploy/scripts/deploy.sh              # build, start, verify
+sudo bash deploy/scripts/bootstrap-vm.sh   # installs Docker & host dependencies
+cp .env.example .env && nano .env          # generate & configure secrets
+bash deploy/scripts/deploy.sh              # build, start, verify & smoke test
 ```
 
 Two topologies are supported, sharing the same images and scripts:
@@ -472,13 +495,5 @@ apply before a public deployment.
 - [Date-Range Analytics trace](Full%20Pipeline%20Tracing%20Docs/API%20Analytics/Tracing%20Date%20Range%20Analytics.md)
 - [AI Insights trace](Full%20Pipeline%20Tracing%20Docs/API%20AI%20Insights/Tracing%20AI%20Insights%20API.md)
 
-## Interview summary
+---
 
-> React owns interaction and rendering. Spring Boot is the trusted application
-> core: it authenticates users, scopes records, validates contracts, applies
-> business rules, persists MySQL data, computes analytics and assembles AI
-> context. FastAPI is an optional AI sidecar that validates schemas, constructs
-> prompts, communicates with an OpenAI-compatible provider and validates the
-> result. AI-generated command drafts require user confirmation before Spring
-> persists them.
-"# LMS-Frontend-Morphism" 
