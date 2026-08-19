@@ -347,7 +347,7 @@ make help                       # list all shortcuts
 
 docker compose ps
 docker compose logs -f backend
-docker compose logs -f --tail=200            # everything
+docker compose logs -f --tail=200            # everythingg
 docker compose restart ai-service
 docker compose exec db mysql -uroot -p"$MYSQL_ROOT_PASSWORD" lifestyle_ai
 
