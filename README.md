@@ -498,8 +498,8 @@ LifeTrack documentation is centralized under the [**Documentation Hub (`docs/REA
 - [**Backend Subsystem Guide**](backend/README.md)
 - [**Frontend Subsystem Guide**](frontend/README.md)
 - [**AI Subsystem Guide**](ai-service/README.md)
-- [**UI Design System**](UI/design-system/README.md)
-- [**Full Pipeline Tracing Docs**](Full%20Pipeline%20Tracing%20Docs/)
+- [**Design System & UI Specs**](docs/Design%20System/UI/design-system/README.md)
+- [**Full Pipeline Tracing Docs**](docs/Full%20Pipeline%20Tracing%20Docs/)
 
 ---
 

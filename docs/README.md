@@ -3,19 +3,19 @@
 Welcome to the centralized documentation index for **LifeTrack**. All system documentation, architecture designs, deployment manuals, and interview preparation notes are organized below by category.
 
 ---
-```
+
+```text
 📁 LifeTrack (Root)
 │
 ├── README.md                               <-- Main repository overview & live deployment link
 ├── DEPLOYMENT.md                           <-- Primary single-VM GCP production guide
+├── docker-compose.yml                      <-- Active production container orchestration
+├── .env.example                            <-- Production environment template
+├── Makefile                                <-- DevOps CLI shortcuts
+├── start-lifetrack.bat / .sh               <-- 1-click local setup scripts
 │
-├── 📁 docs/
-│   ├── README.md                           <-- 📚 Master Documentation Hub
-│   │
-│   ├── 📁 deployment/                      <-- DevOps, SSH, Billing & File Index
-│   │   ├── LOCALPC-TO-VM.md                (Direct Windows SSH & CI/CD secrets guide)
-│   │   ├── GCP-BILLING-ANALYSIS.md         (Resource optimization & daytime schedule)
-│   │   └── DEPLOYMENT-FILES.md             (Index of all deployment scripts and images)
+├── 📁 docs/                                <-- 📚 Master Documentation Hub
+│   ├── README.md                           (This central index)
 │   │
 │   ├── 📁 architecture/                    <-- System Design, Mechanics & Evolution
 │   │   ├── INTEGRATION-SEAMS.md            (JSON contracts, Pydantic boundaries & security)
@@ -24,22 +24,31 @@ Welcome to the centralized documentation index for **LifeTrack**. All system doc
 │   │   ├── MONITORING-GRAFANA.md           (Actuator + Prometheus + Grafana setup)
 │   │   ├── PAGE-COMPONENT-GUIDE.md         (Frontend component standards & glassmorphism)
 │   │   ├── FRONTEND-AXIOS-REDUX-MIGRATION.md
-│   │   └── FRONTEND-UI-CONSOLIDATION-PHASE-1.md
+│   │   ├── FRONTEND-UI-CONSOLIDATION-PHASE-1.md
+│   │   └── SQL-ER-DIAG.png                 (Database Entity Relationship Diagram)
 │   │
-│   └── 📁 interview-prep/                  <-- Technical Defense, Viva Q&A & Slices
-│       ├── PROJECT-QNA.md                  (Comprehensive viva defense questions & answers)
-│       ├── AI-FLUENCY.md                   (LLM architecture, prompt engineering & fallbacks)
-│       ├── BACKEND-PRESENTATION-PLAN.md    (Vertical slices across the stack)
-│       └── REACT-QUESTIONS.md              (React hooks, Redux Toolkit & state management)
+│   ├── 📁 deployment/                      <-- DevOps, SSH, Billing & File Index
+│   │   ├── LOCALPC-TO-VM.md                (Direct Windows SSH & CI/CD secrets guide)
+│   │   ├── GCP-BILLING-ANALYSIS.md         (Resource optimization & daytime schedule)
+│   │   └── DEPLOYMENT-FILES.md             (Index of all deployment scripts and images)
+│   │
+│   ├── 📁 interview-prep/                  <-- Technical Defense, Viva Q&A & Slices
+│   │   ├── PROJECT-QNA.md                  (Comprehensive viva defense questions & answers)
+│   │   ├── AI-FLUENCY.md                   (LLM architecture, prompt engineering & fallbacks)
+│   │   ├── BACKEND-PRESENTATION-PLAN.md    (Vertical slices across the stack)
+│   │   └── REACT-QUESTIONS.md              (React hooks, Redux Toolkit & state management)
+│   │
+│   ├── 📁 Full Pipeline Tracing Docs/      <-- End-to-end API vertical slice traces
+│   └── 📁 Design System/                   <-- Design tokens, color system & page mockups
 │
-├── 📁 FUTURE SCOPE/                        <-- Unimplemented & Scaling Reference Designs
-│   ├── README.md                           (Explanation of future features)
-│   ├── DEPLOYMENT-SPLIT.md                 (Split 2-VM distributed enterprise architecture)
-│   └── vector-db-turbovec.md               (Local RAG vector DB design for journals)
-│
-├── 📁 Full Pipeline Tracing Docs/          <-- Step-by-step API traces
-└── 📁 UI/design-system/                    <-- Design tokens & color system specifications
-
+└── 📁 FUTURE SCOPE/                        <-- Unimplemented & Scaling Reference Designs
+    ├── README.md                           (Explanation of future features)
+    ├── DEPLOYMENT-SPLIT.md                 (Split 2-VM distributed enterprise architecture)
+    ├── vector-db-turbovec.md               (Local RAG vector DB design for journals)
+    ├── docker-compose.app.yml              (Standby Split App VM stack)
+    ├── docker-compose.ai.yml               (Standby Split AI VM stack)
+    ├── .env.app.example                    (Standby Split App env template)
+    └── .env.ai.example                     (Standby Split AI env template)
 ```
 
 ---
@@ -57,6 +66,7 @@ In-depth system mechanics, integration contracts, component guidelines, and the 
 | [**PAGE-COMPONENT-GUIDE.md**](architecture/PAGE-COMPONENT-GUIDE.md) | Frontend component design guidelines, glassmorphism standards, and UI architecture. |
 | [**FRONTEND-AXIOS-REDUX-MIGRATION.md**](architecture/FRONTEND-AXIOS-REDUX-MIGRATION.md) | Migration history moving from `fetch()` to Axios interceptors and React Context to Redux Toolkit. |
 | [**FRONTEND-UI-CONSOLIDATION-PHASE-1.md**](architecture/FRONTEND-UI-CONSOLIDATION-PHASE-1.md) | Consolidation of fragmented stylesheets into unified design tokens. |
+| [**Database ER Diagram**](architecture/SQL-ER-DIAG.png) | Visual Entity Relationship diagram for MySQL 8 schema. |
 
 ---
 
@@ -95,13 +105,14 @@ Architectural designs and scaling blueprints planned for future milestones:
 | [**FUTURE SCOPE/README.md**](../FUTURE%20SCOPE/README.md) | Overview of proposed enhancements not in the current production build. |
 | [**DEPLOYMENT-SPLIT.md**](../FUTURE%20SCOPE/DEPLOYMENT-SPLIT.md) | 2-VM distributed enterprise deployment separating App VM and AI/GPU VM across private VPC. |
 | [**vector-db-turbovec.md**](../FUTURE%20SCOPE/vector-db-turbovec.md) | Local RAG vector store design for semantic journal retrieval. |
+| [**Standby 2-VM Compose & Env**](../FUTURE%20SCOPE/) | Standby compose files (`docker-compose.app.yml`, `docker-compose.ai.yml`) and env templates. |
 
 ---
 
-## 5. 🔍 Subsystem Deep Dives
+## 5. 🔍 Subsystem Deep Dives & Assets
 
 - [**Backend Guide (Spring Boot)**](../backend/README.md)
 - [**Frontend Guide (React + Redux)**](../frontend/README.md)
 - [**AI Microservice Guide (FastAPI)**](../ai-service/README.md)
-- [**UI Design System (Tokens & Specs)**](../UI/design-system/README.md)
-- [**Full Pipeline Tracing Docs**](../Full%20Pipeline%20Tracing%20Docs/)
+- [**Design System & UI Specs**](Design%20System/UI/design-system/README.md)
+- [**Full Pipeline Tracing Docs**](Full%20Pipeline%20Tracing%20Docs/)
