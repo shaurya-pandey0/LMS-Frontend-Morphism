@@ -1,8 +1,8 @@
-# GCP Optimization & Resource Evolution Report (18–20 August 2026)
+# GCP Optimization & Resource Evolution Report (18–22 August 2026)
 
 ## 1. The Complete Optimization Timeline & Evolution Story
 
-This document records the empirical cost and infrastructure optimization journey of **LifeTrack** on Google Cloud Platform (GCP Compute Engine), demonstrating how data-driven observability and right-sizing reduced operational costs by **~85%** without sacrificing performance, uptime, or developer workflow.
+This document records the empirical cost and infrastructure optimization journey of **LifeTrack** on Google Cloud Platform (GCP Compute Engine), demonstrating how data-driven observability and right-sizing reduced operational costs by **87.4%** without sacrificing performance, uptime, or developer workflow.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -27,7 +27,7 @@ This document records the empirical cost and infrastructure optimization journey
 │   • IP Architecture: Reserved Static IPv4 (34.29.200.124)                              │
 │   • Schedule: 07:00 – 23:00 IST sleep policy                                           │
 │   • Measured CPU Load: ~8% – 12% steady-state (1.8 unused cores)                       │
-│   • Projected Daily Cost: ~₹70 – ₹85 / day (Over 85% total reduction)                  │
+│   • ✅ CONFIRMED Daily Cost: ₹76.80 / day (87.4% total reduction)                       │
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -37,14 +37,32 @@ This document records the empirical cost and infrastructure optimization journey
 
 The actual billing data across the operational cycle confirms the impact of the optimizations:
 
-| Date | Active Configuration | Raw Usage Cost | Credits / Savings | Subtotal (Paid Out of Pocket) | Cost Delta (%) |
+| Date | Active Configuration | Raw Usage Cost | Credits / Savings | Subtotal (Paid) | Cost Delta (%) |
 |---|---|---|---|---|---|
 | **10–17 Aug** | Idle / Provisioning | ₹3.27 / day | -₹3.27 | **₹0.00** | Baseline storage |
 | **18 Aug 2026** | `e2-standard-8` (8 vCPU / 32 GB) 24/7 | **₹610.42** | -₹610.42 | **₹0.00** | 🔴 Peak initial deploy |
-| **19 Aug 2026** | `e2-standard-4` + Night Sleep Schedule | **₹148.33** | -₹148.33 | **₹0.00** | 🟢 **-75.7% drop** |
-| **20 Aug 2026** *(In Progress)* | `e2-standard-2` + Static IP + Night Sleep | *(Settles 21 Aug)* | -100% | **₹0.00** | 🎯 **Est. ~₹70 – ₹85** |
+| **19 Aug 2026** | `e2-standard-4` + Night Sleep Schedule | **₹211.90** | -₹211.90 | **₹0.00** | 🟢 **-65.3% drop** |
+| **20 Aug 2026** | `e2-standard-2` (switched mid-day) + Static IP | **₹116.82** | -₹116.82 | **₹0.00** | 🟢 **-80.9% drop** |
+| **21 Aug 2026** | `e2-standard-2` + Sleep Schedule (first full day) | **₹76.80** | -₹76.80 | **₹0.00** | 🎯 **-87.4% from peak** |
 
-> **Credit Protection:** 100% of all gross charges have been completely absorbed by promotional / issued credits (`Subtotal = ₹0.00`). Total credit wallet remains healthy at > ₹94,800.
+> **Credit Protection:** 100% of all gross charges absorbed by credits (`Subtotal = ₹0.00`, `Tax = —`, `Total = ₹0.00`).
+
+---
+
+## 2b. Credit Wallet Breakdown (Verified 22 Aug 2026, 4:38 PM IST)
+
+| Credit Name | Status | Remaining | Original | % Left |
+|---|---|---|---|---|
+| Trial credit for GenAI App Builder | ✅ Available | **₹95,700.01** | ₹95,700.01 | **100%** |
+| Google Developer Program (Monthly) #1 | ✅ Available | ₹956.47 | ₹956.47 | 100% |
+| Google Developer Program (Monthly) #2 | ✅ Available | ₹944.03 | ₹944.03 | 100% |
+| Google Developer Program (Monthly) #3 | ✅ Available | ₹944.03 | ₹944.03 | 100% |
+| Google Developer Program (Monthly) #4 | ✅ Available | ₹944.03 | ₹944.03 | 100% |
+| Google Developer Program (Monthly) #5 | ⚠️ 72% left | ₹685.81 | ₹957.01 | 72% |
+| Google Developer Program (Monthly) #6 | ⛔ Used | ₹0.00 | ₹917.86 | 0% |
+| **Total Available Credits** | | **₹100,174.38** | | |
+
+**Projected Runway at ₹76.80/day:** ~100,174 ÷ 76.80 = **~1,304 days (~3.6 years)** before credits are exhausted.
 
 ---
 
